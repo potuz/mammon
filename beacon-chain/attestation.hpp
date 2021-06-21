@@ -23,10 +23,11 @@
 
 #include "common/types.hpp"
 #include "yaml-cpp/yaml.h"
+#include "ssz/ssz_container.hpp" 
 
 namespace eth
 {
-    struct AttestationData
+    struct AttestationData : public ssz::Container
     {
         Slot slot;
         CommitteeIndex index;
@@ -34,10 +35,8 @@ namespace eth
         Root beacon_block_root;
         Checkpoint source, target;
 
-        Bytes<128> serialize() const
-        {
-            return Bytes<8>(slot) + Bytes<8>(index) + beacon_block_root + source.serialize() + target.serialize();
-        }
+        AttestationData() : ssz::Container(128) {}
+        BytesVector serialize() const { return serialize_({&slot, &index, &beacon_block_root, &source, &target}); }
 
     };
 
@@ -46,18 +45,19 @@ namespace eth
         std::vector<ValidatorIndex> attesting_indices;
         AttestationData data;
         BLSSignature signature;
-
-        std::vector<std::byte> serialize() const;
     };
 
-    struct PendingAttestation
+    struct PendingAttestation : public ssz::Container
     {
         eth::Bitlist aggregation_bits;
         AttestationData data;
         Slot inclusion_delay;
         ValidatorIndex proposer_index;
 
-        std::vector<std::byte> serialize() const;
+        BytesVector serialize() const
+        {
+            return serialize_({&aggregation_bits, &data, &inclusion_delay, &proposer_index});
+        }
     };
 
     struct Attestation

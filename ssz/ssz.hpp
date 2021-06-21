@@ -20,35 +20,10 @@
  */
 
 #pragma once
-#include <cstddef>
-#include <vector>
-#include "common/bytes.hpp"
+#include <cstdint>
 
 namespace constants
 {
     constexpr std::uint32_t BYTES_PER_LENGTH_OFFSET = 4;
-}
-
-namespace ssz
-{
-    template<typename T, bool variable_parts = true>
-    std::vector<std::byte> serialize_list(const std::vector<T>& vec)
-    {
-        std::vector<std::byte> ret;
-        std::uint32_t offset = constants::BYTES_PER_LENGTH_OFFSET * vec.size();
-        for (std::size_t i = 0; i < vec.size(); ++i)
-        {
-            auto part_ssz = vec[i].serialize();
-            if (variable_parts)
-            {
-                eth::Bytes4 offset_ssz(offset);
-                ret.insert(ret.begin() + i*constants::BYTES_PER_LENGTH_OFFSET,
-                        offset_ssz.begin(), offset_ssz.end());
-                offset += std::uint32_t(part_ssz.size());
-            }
-            ret.insert(ret.end(), part_ssz.begin(), part_ssz.end());
-        }
-        return ret;
-    }
 }
 

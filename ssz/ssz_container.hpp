@@ -1,4 +1,4 @@
-/*  bitlist.hpp 
+/*  ssz_container.hpp 
  * 
  *  This file is part of Mammon. 
  *  mammon is a greedy and selfish ETH consensus client. 
@@ -21,38 +21,27 @@
 
 #pragma once
 #include <vector>
-#include <ostream>
-#include "ssz/ssz_container.hpp" 
+#include <cstddef>
+#include <string>
 
-namespace eth
+namespace ssz
 {
-    class Bitlist : public ssz::Container
+    class Container
     {
         private:
-            std::vector<bool> m_arr;
+            std::size_t size_;          // the serialized size
+        
+        protected:
+            static std::vector<std::byte> serialize_(std::vector<const Container*>);
 
         public:
-            template<typename ...T>
-            Bitlist (T&&...l) : ssz::Container(), m_arr {{std::forward<T>(l)...}} {};
 
-            std::vector<std::byte> serialize() const;
+            Container(std::size_t size = 0) : size_ {size} {};
 
-            void from_hexstring(std::string str);
-
-            friend std::ostream& operator<< (std::ostream& os, const Bitlist& m_bits)
-            {
-                for (auto const &b : m_bits.m_arr)
-                    os << b;
-                return os;
-            };
-
-            std::string to_string() const;
-            
-            std::size_t size() const
-            {
-                return m_arr.size();
-            }
+            virtual ~Container() = default;
+            virtual std::vector<std::byte> serialize() const = 0;
     };
+
 }
 
 

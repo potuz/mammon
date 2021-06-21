@@ -40,7 +40,6 @@ int main(int argc, char *argv[])
 
     eth::Bitvector<4> vec = {true, true, false, true};
     std::cout << "Bitvector :" << vec << std::endl;
-    std::cout << "Serialization :" << vec.serialize().to_string() << std::endl;
 
 
     std::cout << "\nBitlist test\n";
@@ -59,11 +58,6 @@ int main(int argc, char *argv[])
     std::cout << "Serialization : "<< anotherbitlist.to_string() << std::endl; 
     
 
-
-    auto value = YAML::LoadFile("/home/heluani/Documents/code/eth2.0-spec-tests/tests/minimal/phase0/ssz_static/Checkpoint/ssz_random/case_0/value.yaml");
-    auto chk = value.as<eth::Checkpoint>();
-    std::cout << "\nTesting Checkpoint: \n Epoch : " << chk.epoch << "\n root : " << chk.root.to_string() << std::endl;
-    std::cout << "Serialized : " << chk.serialize().to_string() << std::endl;
 
     std::filesystem::path path = "/home/heluani/Documents/code/eth2.0-spec-tests/tests/minimal/phase0/ssz_static/Checkpoint/ssz_random/case_0/serialized.ssz_snappy";
     std::ifstream file(path, std::ios::in | std::ios::binary);

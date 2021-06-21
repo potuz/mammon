@@ -30,8 +30,7 @@ endif()
 
 add_executable (beacon-chain
         common/bitlist.cpp
-        beacon-chain/attestation.cpp
-        beacon-chain/beacon_block.cpp
+        ssz/ssz_container.cpp
 	beacon-chain/main.cpp
 	)
 
@@ -46,8 +45,7 @@ target_link_libraries(beacon-chain
 
 add_executable(test_ssz
                 common/bitlist.cpp
-                beacon-chain/attestation.cpp
-                beacon-chain/beacon_block.cpp
+                ssz/ssz_container.cpp
 	 	beacon-chain/test/test_ssz.cpp
 		)
 

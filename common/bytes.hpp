@@ -28,16 +28,19 @@
 #include <iomanip>
 #include <iostream>
 #include <concepts>
+#include "ssz/ssz_container.hpp"
+#include "yaml-cpp/yaml.h"
 
 namespace eth
 {
     template<std::size_t N>
-    class Bytes {
+    class Bytes : public ssz::Container 
+    {
         private:
 
             std::array<std::byte, N> m_arr;
-            
-            static constexpr std::array<std::byte, N> bytes_from_int(std::integral auto value)
+
+            static auto bytes_from_int(std::integral auto value) -> std::array<std::byte, N> 
             {
                 if (sizeof(value) > N)
                     throw std::out_of_range("integer type is larger than bytes size");
@@ -49,7 +52,7 @@ namespace eth
                 return ret_arr;
             }
 
-            static constexpr auto chars_to_byte(std::string const & c) -> std::byte
+            static auto chars_to_byte(std::string const & c) -> std::byte
             {
                     unsigned int x;
                     std::stringstream ss;
@@ -58,7 +61,7 @@ namespace eth
                     return std::byte(x);
             }
 
-            static constexpr std::array<std::byte, N> bytes_from_str(std::string &str)
+            static auto bytes_from_str(std::string &str) ->  std::array<std::byte, N>
             {
                 if (!str.starts_with("0x"))
                     throw std::invalid_argument("string not prepended with 0x");
@@ -78,31 +81,37 @@ namespace eth
             }
 
         public:
-            
-            template<typename ...T>
-            Bytes (T&&...l) : m_arr {{std::forward<std::byte>(std::byte(l))...}} {};
 
-            Bytes (std::string hex) :
-                m_arr {bytes_from_str(hex)} {};
-            
-            Bytes (std::integral auto value) : 
-                m_arr { bytes_from_int(value) } {};
-
-            Bytes (std::array<std::byte,N> arr) :
-                m_arr {arr} {};
-
-            Bytes (std::vector<std::byte> arr)
+            Bytes() : ssz::Container(N), m_arr {} {}; 
+            Bytes( const Bytes& b ) : ssz::Container(N), m_arr {b.m_arr} {};
+            Bytes( std::string hex ) : ssz::Container(N), m_arr {bytes_from_str(hex)} {};
+            Bytes( std::integral auto value ) : ssz::Container(N), m_arr { bytes_from_int(value) } {};
+            Bytes( std::array<std::byte,N> arr ) : ssz::Container(N), m_arr {arr} {};
+            Bytes( std::vector<std::byte> arr ) : ssz::Container(N)
             {
                 if (arr.size() != N)
                     throw std::out_of_range ("vector of different size than bytes");
                 std::copy_n(arr.begin(), N, m_arr.begin());
             }
 
+            virtual std::vector<std::byte> serialize() const
+            {
+                std::vector<std::byte> ret(m_arr.cbegin(),m_arr.cend());
+                return ret;
+            }
+
+            operator std::vector<std::byte>()
+            {
+                std::vector<std::byte> ret(m_arr.begin(),m_arr.end());
+                return ret;
+            }
+
             constexpr std::byte* data() noexcept
             {
                 return m_arr.data();
             }
-            const std::array<std::byte, N> &to_array() const
+
+            const std::array<std::byte, N>& to_array() const
             {
                 return m_arr;
             }
@@ -161,37 +170,27 @@ namespace eth
                 return Bytes<N+M>(ret);
             }
 
-            std::uint64_t to_uint64()
-            {
-                if (N > 8)
-                    throw std::out_of_range("bytes size larger than uint64");
-                uint64_t ret_uint = 0;
-                for (int i=0; i < N; ++i)
-                    ret_uint |= (std::to_integer<std::uint64_t>(m_arr[i]) << 8*i);
-                return ret_uint;
-            }
-
             std::size_t size(void) const
             {
                 return N;
             }
 
-            constexpr std::array<std::byte, N>::iterator begin() noexcept
+            constexpr typename std::array<std::byte, N>::iterator begin() noexcept
             {
                 return m_arr.begin();
             }
 
-            constexpr std::array<std::byte, N>::const_iterator cbegin() const noexcept
+            constexpr typename std::array<std::byte, N>::const_iterator cbegin() const noexcept
             {
                 return m_arr.cbegin();
             }
 
-            constexpr std::array<std::byte, N>::iterator end() noexcept
+            constexpr typename std::array<std::byte, N>::iterator end() noexcept
             {
                 return m_arr.end();
             }
 
-            constexpr std::array<std::byte, N>::const_iterator cend() const noexcept
+            constexpr typename std::array<std::byte, N>::const_iterator cend() const noexcept
             {
                 return m_arr.cend();
             }
@@ -203,5 +202,27 @@ namespace eth
     using Bytes32 = Bytes<32>;
     using Bytes48 = Bytes<48>;
     using Bytes96 = Bytes<96>;
-}
 
+    using BytesVector = std::vector<std::byte>;
+}
+namespace YAML
+{
+    template <
+        template <std::size_t> class C,
+        std::size_t N
+    >
+    requires std::is_same<C<N>, eth::Bytes<N>>::value
+    struct convert<C<N>>
+    {
+        static Node encode(const C<N>& b)
+        {
+            return Node(b.to_string());
+        }
+
+        static bool decode(const Node& node, C<N>& b)
+        {
+            b = node.as<std::string>();
+            return true;
+        }
+    };
+}

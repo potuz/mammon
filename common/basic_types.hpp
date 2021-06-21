@@ -20,16 +20,14 @@
  */
 
 #pragma once
-
-#include "bytes.hpp"
+#include "slot.hpp"
 
 namespace eth 
 {
-    using Slot = std::uint64_t;
-    using Epoch = std::uint64_t;
-    using CommitteeIndex = std::uint64_t;
-    using ValidatorIndex = std::uint64_t;
-    using Gwei = std::uint64_t;
+    using Epoch = Slot;
+    using CommitteeIndex = Slot;
+    using ValidatorIndex = Slot;
+    using Gwei = Slot;
 
     using Root = Bytes32;
     using Hash32 = Bytes32;
@@ -44,7 +42,5 @@ namespace eth
     using BLSSignature = Bytes96;
 
     using Eth1Address = Bytes20;
-
-    constexpr int BYTES_PER_LENGTH_OFFSET = 4;
 }
 

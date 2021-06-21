@@ -1,4 +1,4 @@
-/*  bitlist.hpp 
+/*  slot.hpp 
  * 
  *  This file is part of Mammon. 
  *  mammon is a greedy and selfish ETH consensus client. 
@@ -20,39 +20,44 @@
  */
 
 #pragma once
-#include <vector>
-#include <ostream>
-#include "ssz/ssz_container.hpp" 
+
+#include "bytes.hpp"
+#include "ssz/ssz_container.hpp"
+#include <cstdint>
+#include "yaml-cpp/yaml.h"
 
 namespace eth
 {
-    class Bitlist : public ssz::Container
+    class Slot : public ssz::Container
     {
         private:
-            std::vector<bool> m_arr;
+            
+            std::uint64_t value_;
 
         public:
-            template<typename ...T>
-            Bitlist (T&&...l) : ssz::Container(), m_arr {{std::forward<T>(l)...}} {};
 
-            std::vector<std::byte> serialize() const;
-
-            void from_hexstring(std::string str);
-
-            friend std::ostream& operator<< (std::ostream& os, const Bitlist& m_bits)
-            {
-                for (auto const &b : m_bits.m_arr)
-                    os << b;
-                return os;
-            };
-
-            std::string to_string() const;
-            
-            std::size_t size() const
-            {
-                return m_arr.size();
-            }
+            Slot(std::uint64_t s=0) : ssz::Container(8), value_ {s} {};
+            operator std::uint64_t() const {return value_;};
+            operator std::uint64_t&() {return value_; }
+            operator Bytes8() const {return value_; }
+            virtual std::vector<std::byte> serialize() const {return Bytes8(value_).serialize();}
     };
 }
 
+namespace YAML
+{
+    template<>
+    struct convert<eth::Slot>
+    {
+        static Node encode(const eth::Slot& s)
+        {
+            return Node(std::uint64_t(s));
+        }
 
+        static bool decode(const Node& node, eth::Slot& s)
+        {
+            s = node.as<std::uint64_t>();
+            return true;
+        }
+    };
+}

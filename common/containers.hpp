@@ -20,53 +20,54 @@
  */
 
 #pragma once
-#include "common/types.hpp"
+#include "common/basic_types.hpp"
 #include "yaml-cpp/yaml.h"
 
 namespace eth
 
 {
 
-    struct Fork
+    struct Fork : public ssz::Container
     {
         Version previous_version, current_version;
         Epoch epoch;
 
-        Bytes<16> serialize() const
+        Fork() : ssz::Container(16) {}
+        BytesVector serialize() const
         {
-            return previous_version + current_version + Bytes<8>(epoch); 
+            return serialize_({&previous_version, &current_version, &epoch});
         }
-
     };
 
-    struct ForkData
+    struct ForkData : public ssz::Container
     {
         Version current_version;
-        Root genesis_validators_root;
-        Bytes<36> serialize() const
+        Root    genesis_validators_root;
+
+        ForkData() : ssz::Container(36) {}
+        BytesVector serialize() const
         {
-            return current_version + genesis_validators_root;
+            return serialize_({&current_version, &genesis_validators_root});
         }
+
     };
 
-    struct Checkpoint
+    struct Checkpoint : public ssz::Container
     {
         Epoch epoch;
-        Root root;
-        Bytes<40> serialize() const
-        {
-            return Bytes<8>(epoch) + root;
-        }
+        Root  root;
+
+        Checkpoint() : ssz::Container(40) {}
+        BytesVector serialize() const { return serialize_({&epoch, &root}); }
     };
 
-    struct SigningData
+    struct SigningData : public ssz::Container
     {
         Root object_root;
         Domain domain;
-        Bytes<64> serialize() const
-        {
-            return object_root + domain;
-        }
+
+        SigningData() : ssz::Container(64) {}
+        BytesVector serialize() const { return serialize_({&object_root, &domain}); }
     };
 
 }
@@ -79,8 +80,8 @@ namespace YAML
         static Node encode(const eth::Fork& fork)
         {
             Node node;
-            node["previous_version"] = fork.previous_version.to_string();
-            node["current_version"] = fork.current_version.to_string();
+            node["previous_version"] = fork.previous_version;
+            node["current_version"] = fork.current_version;
             node["epoch"] = fork.epoch;
             return node;
         }
@@ -90,8 +91,8 @@ namespace YAML
             if ((node.Type() != NodeType::Map) || node.size() != 3)
                 return false;
 
-            fork.previous_version  = node["previous_version"].as<std::string>();
-            fork.current_version  = node["current_version"].as<std::string>();
+            fork.current_version = node["previous_version"].as<eth::Version>();
+            fork.current_version = node["current_version"].as<eth::Version>();
             fork.epoch = node["epoch"].as<eth::Epoch>();
             return true;
         }
@@ -103,8 +104,8 @@ namespace YAML
         static Node encode(const eth::ForkData& forkdata)
         {
             Node node;
-            node["current_version"] = forkdata.current_version.to_string();
-            node["genesis_validators_root"] = forkdata.genesis_validators_root.to_string();
+            node["current_version"] = forkdata.current_version;
+            node["genesis_validators_root"] = forkdata.genesis_validators_root;
             return node;
         }
 
@@ -113,8 +114,8 @@ namespace YAML
             if ((node.Type() != NodeType::Map) || node.size() != 2)
                 return false;
 
-            forkdata.current_version  = node["current_version"].as<std::string>();
-            forkdata.genesis_validators_root = node["genesis_validators_root"].as<std::string>();
+            forkdata.current_version  = node["current_version"].as<eth::Version>();
+            forkdata.genesis_validators_root = node["genesis_validators_root"].as<eth::Root>();
             return true;
         }
     };
@@ -126,7 +127,7 @@ namespace YAML
         {
             Node node;
             node["epoch"] = chk.epoch;
-            node["root"] = chk.root.to_string();
+            node["root"] = chk.root;
             return node;
         }
 
@@ -136,7 +137,29 @@ namespace YAML
                 return false;
 
             chk.epoch = node["epoch"].as<eth::Epoch>();
-            chk.root  = node["root"].as<std::string>();
+            chk.root  = node["root"].as<eth::Root>();
+            return true;
+        }
+    };
+
+    template<>
+    struct convert<eth::SigningData>
+    {
+        static Node encode(const eth::SigningData& s)
+        {
+            Node node;
+            node["object_root"] = s.object_root;
+            node["domain"] = s.domain;
+            return node;
+        }
+
+        static bool decode(const Node& node, eth::SigningData& s)
+        {
+            if ((node.Type() != NodeType::Map) || node.size() != 2)
+                return false;
+
+            s.object_root  = node["object_root"].as<eth::Root>();
+            s.domain = node["domain"].as<eth::Domain>();
             return true;
         }
     };

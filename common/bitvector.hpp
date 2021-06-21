@@ -23,11 +23,12 @@
 #pragma once
 #include <array>
 #include <cassert>
+#include "ssz/ssz_container.hpp"
 
 namespace eth
 {
     template<unsigned N> 
-    class Bitvector
+    class Bitvector : public ssz::Container
     {
         private:
 
@@ -35,11 +36,11 @@ namespace eth
 
         public:
 
-            Bitvector (std::array<bool, N> vec) : m_arr {vec} {};
+            Bitvector (std::array<bool, N> vec) : ssz::Container (N), m_arr {vec} {};
             template<typename ...T>
-            Bitvector (T&&...l) : m_arr {{std::forward<T>(l)...}} {};
+            Bitvector (T&&...l) : ssz::Container (N), m_arr {{std::forward<T>(l)...}} {};
 
-            Bytes<(N+7)/8> serialize() const
+            virtual std::vector<std::byte> serialize() const
             {
                 Bytes<(N+7)/8> ret {}; 
                 for (int i=0; i < N; ++i)
