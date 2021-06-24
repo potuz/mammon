@@ -21,22 +21,207 @@
 
 #pragma once
 #include "common/basic_types.hpp"
+#include "ssz/ssz.hpp" 
+#include "ssz/ssz_container.hpp" 
 #include "yaml-cpp/yaml.h"
 
 namespace eth
 
 {
+    template<class T, std::size_t N> 
+    class VectorFixedSizedParts : public ssz::Container
+    {
+        private:
+            std::array<T,N> m_arr;
+
+        public:
+            static constexpr std::size_t ssz_size = N*T::ssz_size; 
+            std::size_t get_ssz_size() const { return ssz_size;  }
+            
+            std::size_t size(void) const
+            {
+                return N;
+            }
+
+            constexpr typename std::array<T,N>::iterator begin() noexcept
+            {
+                return m_arr.begin();
+            }
+
+            constexpr typename std::array<T,N>::const_iterator cbegin() const noexcept
+            {
+                return m_arr.cbegin();
+            }
+
+            constexpr typename std::array<T,N>::iterator end() noexcept
+            {
+                return m_arr.end();
+            }
+
+            constexpr typename std::array<T,N>::const_iterator cend() const noexcept
+            {
+                return m_arr.cend();
+            }
+
+            BytesVector serialize() const
+            {
+                BytesVector ret;
+                for (auto part : m_arr)
+                {
+                    auto part_ssz = part.serialize();
+                    ret.insert(ret.end(), part_ssz.begin(), part_ssz.end());
+                }
+                return ret;
+            }
+            YAML::Node encode() const 
+            {
+                return YAML::convert<std::array<T,N>>::encode(m_arr);
+            }
+            bool decode(const YAML::Node& node)
+            { 
+                return YAML::convert<std::array<T,N>>::decode(node, m_arr);
+            }
+    };
+
+    template<class T> 
+    class ListFixedSizedParts : public ssz::Container
+    {
+        private:
+            std::vector<T> m_arr;
+
+        public:
+            std::size_t size(void) const
+            {
+                return m_arr.size();
+            }
+
+            constexpr typename std::vector<T>::iterator begin() noexcept
+            {
+                return m_arr.begin();
+            }
+
+            constexpr typename std::vector<T>::const_iterator cbegin() const noexcept
+            {
+                return m_arr.cbegin();
+            }
+
+            constexpr typename std::vector<T>::iterator end() noexcept
+            {
+                return m_arr.end();
+            }
+
+            constexpr typename std::vector<T>::const_iterator cend() const noexcept
+            {
+                return m_arr.cend();
+            }
+
+            BytesVector serialize() const
+            {
+                BytesVector ret;
+                for (auto part : m_arr)
+                {
+                    auto part_ssz = part.serialize();
+                    ret.insert(ret.end(), part_ssz.begin(), part_ssz.end());
+                }
+                return ret;
+            }
+            YAML::Node encode() const 
+            {
+                return YAML::convert<std::vector<T>>::encode(m_arr);
+            }
+            bool decode(const YAML::Node& node)
+            { 
+                return YAML::convert<std::vector<T>>::decode(node, m_arr);
+            }
+    };
+
+    template<class T> 
+    class ListVariableSizedParts : public ssz::Container
+    {
+        private:
+            std::vector<T> m_arr;
+
+        public:
+            std::size_t size(void) const
+            {
+                return m_arr.size();
+            }
+
+            constexpr typename std::vector<T>::iterator begin() noexcept
+            {
+                return m_arr.begin();
+            }
+
+            constexpr typename std::vector<T>::const_iterator cbegin() const noexcept
+            {
+                return m_arr.cbegin();
+            }
+
+            constexpr typename std::vector<T>::iterator end() noexcept
+            {
+                return m_arr.end();
+            }
+
+            constexpr typename std::vector<T>::const_iterator cend() const noexcept
+            {
+                return m_arr.cend();
+            }
+
+            BytesVector serialize() const
+            {
+                BytesVector offsets,ret;
+                std::uint32_t offset = size()*constants::BYTES_PER_LENGTH_OFFSET;
+                for (auto part : m_arr)
+                {
+                    auto offset_ssz = Bytes4(offset).serialize();
+                    offsets.insert(offsets.end(), offset_ssz.begin(), offset_ssz.end());
+
+                    auto part_ssz = part.serialize();
+                    offset += part_ssz.size();
+                    ret.insert(ret.end(), part_ssz.begin(), part_ssz.end());
+                }
+                if (offsets.size())
+                    ret.insert(ret.begin(), offsets.begin(), offsets.end());
+                return ret;
+            }
+            YAML::Node encode() const 
+            {
+                return YAML::convert<std::vector<T>>::encode(m_arr);
+            }
+            bool decode(const YAML::Node& node)
+            { 
+                return YAML::convert<std::vector<T>>::decode(node, m_arr);
+            }
+    };
 
     struct Fork : public ssz::Container
     {
         Version previous_version, current_version;
         Epoch epoch;
 
-        Fork() : ssz::Container(16) {}
+        static constexpr std::size_t ssz_size = 16;
+        std::size_t get_ssz_size() const { return ssz_size; } 
         BytesVector serialize() const
         {
             return serialize_({&previous_version, &current_version, &epoch});
         }
+
+        YAML::Node encode() const
+        { 
+            return encode_({
+                    { "previous_version", &previous_version },
+                    { "current_version", &current_version },
+                    { "epoch", &epoch } });
+        }
+
+        bool decode(const YAML::Node& node) 
+        { 
+            return decode_(node, {
+                    { "previous_version", &previous_version },
+                    { "current_version", &current_version },
+                    { "epoch", &epoch } });
+        }
+
     };
 
     struct ForkData : public ssz::Container
@@ -44,10 +229,25 @@ namespace eth
         Version current_version;
         Root    genesis_validators_root;
 
-        ForkData() : ssz::Container(36) {}
+        static constexpr std::size_t ssz_size = 36;
+        std::size_t get_ssz_size() const { return ssz_size; } 
         BytesVector serialize() const
         {
             return serialize_({&current_version, &genesis_validators_root});
+        }
+
+        YAML::Node encode() const
+        { 
+            return encode_({
+                    { "current_version", &current_version },
+                    { "genesis_validators_root", &genesis_validators_root } });
+        }
+
+        bool decode(const YAML::Node& node) 
+        { 
+            return decode_(node, {
+                    { "current_version", &current_version },
+                    { "genesis_validators_root", &genesis_validators_root } });
         }
 
     };
@@ -57,8 +257,24 @@ namespace eth
         Epoch epoch;
         Root  root;
 
-        Checkpoint() : ssz::Container(40) {}
+        static constexpr std::size_t ssz_size = 40;
+        std::size_t get_ssz_size() const { return ssz_size; } 
         BytesVector serialize() const { return serialize_({&epoch, &root}); }
+
+        YAML::Node encode() const
+        { 
+            return encode_({
+                    { "epoch", &epoch },
+                    { "root", &root } });
+        }
+
+        bool decode(const YAML::Node& node) 
+        { 
+            return decode_(node, {
+                    { "epoch", &epoch },
+                    { "root", &root } });
+        }
+
     };
 
     struct SigningData : public ssz::Container
@@ -66,102 +282,24 @@ namespace eth
         Root object_root;
         Domain domain;
 
-        SigningData() : ssz::Container(64) {}
+        static constexpr std::size_t ssz_size = 64;
+        std::size_t get_ssz_size() const { return ssz_size; } 
         BytesVector serialize() const { return serialize_({&object_root, &domain}); }
+
+        YAML::Node encode() const
+        { 
+            return encode_({
+                    { "object_root", &object_root },
+                    { "domain", &domain} });
+        }
+
+        bool decode(const YAML::Node& node) 
+        { 
+            return decode_(node, {
+                    { "object_root", &object_root },
+                    { "domain", &domain} });
+        }
+
     };
 
 }
-
-namespace YAML
-{
-    template<>
-    struct convert<eth::Fork>
-    {
-        static Node encode(const eth::Fork& fork)
-        {
-            Node node;
-            node["previous_version"] = fork.previous_version;
-            node["current_version"] = fork.current_version;
-            node["epoch"] = fork.epoch;
-            return node;
-        }
-
-        static bool decode(const Node& node, eth::Fork& fork)
-        {
-            if ((node.Type() != NodeType::Map) || node.size() != 3)
-                return false;
-
-            fork.current_version = node["previous_version"].as<eth::Version>();
-            fork.current_version = node["current_version"].as<eth::Version>();
-            fork.epoch = node["epoch"].as<eth::Epoch>();
-            return true;
-        }
-    };
-
-    template<>
-    struct convert<eth::ForkData>
-    {
-        static Node encode(const eth::ForkData& forkdata)
-        {
-            Node node;
-            node["current_version"] = forkdata.current_version;
-            node["genesis_validators_root"] = forkdata.genesis_validators_root;
-            return node;
-        }
-
-        static bool decode(const Node& node, eth::ForkData& forkdata)
-        {
-            if ((node.Type() != NodeType::Map) || node.size() != 2)
-                return false;
-
-            forkdata.current_version  = node["current_version"].as<eth::Version>();
-            forkdata.genesis_validators_root = node["genesis_validators_root"].as<eth::Root>();
-            return true;
-        }
-    };
-
-    template<>
-    struct convert<eth::Checkpoint>
-    {
-        static Node encode(const eth::Checkpoint& chk)
-        {
-            Node node;
-            node["epoch"] = chk.epoch;
-            node["root"] = chk.root;
-            return node;
-        }
-
-        static bool decode(const Node& node, eth::Checkpoint& chk)
-        {
-            if ((node.Type() != NodeType::Map) || node.size() != 2)
-                return false;
-
-            chk.epoch = node["epoch"].as<eth::Epoch>();
-            chk.root  = node["root"].as<eth::Root>();
-            return true;
-        }
-    };
-
-    template<>
-    struct convert<eth::SigningData>
-    {
-        static Node encode(const eth::SigningData& s)
-        {
-            Node node;
-            node["object_root"] = s.object_root;
-            node["domain"] = s.domain;
-            return node;
-        }
-
-        static bool decode(const Node& node, eth::SigningData& s)
-        {
-            if ((node.Type() != NodeType::Map) || node.size() != 2)
-                return false;
-
-            s.object_root  = node["object_root"].as<eth::Root>();
-            s.domain = node["domain"].as<eth::Domain>();
-            return true;
-        }
-    };
-}
-

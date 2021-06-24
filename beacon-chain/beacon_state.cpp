@@ -23,9 +23,7 @@
 
 namespace eth
 {
-    std::vector<std::byte> BeaconBlock::serialize() const
-    {
-        
+    /*
     void BeaconState::genesis_time(std::uint64_t val)
     {
         genesis_time_ = val;
@@ -102,4 +100,5 @@ namespace eth
     {
         finalized_checkpoint_ = std::move(val);
     }
+    */
 }

@@ -23,6 +23,7 @@
 #include <vector>
 #include <ostream>
 #include "ssz/ssz_container.hpp" 
+#include "yaml-cpp/yaml.h"
 
 namespace eth
 {
@@ -33,11 +34,7 @@ namespace eth
 
         public:
             template<typename ...T>
-            Bitlist (T&&...l) : ssz::Container(), m_arr {{std::forward<T>(l)...}} {};
-
-            std::vector<std::byte> serialize() const;
-
-            void from_hexstring(std::string str);
+            Bitlist (T&&...l) : m_arr {{std::forward<T>(l)...}} {};
 
             friend std::ostream& operator<< (std::ostream& os, const Bitlist& m_bits)
             {
@@ -46,12 +43,13 @@ namespace eth
                 return os;
             };
 
+            void from_hexstring(std::string str);
             std::string to_string() const;
-            
-            std::size_t size() const
-            {
-                return m_arr.size();
-            }
+            std::size_t size() const { return m_arr.size(); }
+
+            std::vector<std::byte> serialize() const;
+            YAML::Node encode() const;
+            bool decode(const YAML::Node& node);
     };
 }
 

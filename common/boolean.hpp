@@ -1,4 +1,4 @@
-/*  eth1data.hpp 
+/*  boolean.hpp 
  * 
  *  This file is part of Mammon. 
  *  mammon is a greedy and selfish ETH consensus client. 
@@ -20,35 +20,32 @@
  */
 
 #pragma once
-#include "common/basic_types.hpp" 
+
 #include "ssz/ssz_container.hpp"
+#include "common/basic_types.hpp"
 #include "yaml-cpp/yaml.h"
 
 namespace eth
 {
-    struct Eth1Data : public ssz::Container
+    class Boolean : public ssz::Container
     {
-        Root deposit_root;
-        Counter deposit_count;
-        Hash32  block_hash;
+        private:
+            
+            bool value_;
 
-        static constexpr std::size_t ssz_size = 72;
-        std::size_t get_ssz_size() const { return ssz_size; } 
-        BytesVector serialize() const { return serialize_({&deposit_root, &deposit_count, &block_hash}); }
-        YAML::Node encode() const
-        { 
-            return encode_({
-                    { "deposit_root", &deposit_root},
-                    { "deposit_count", &deposit_count},
-                    { "block_hash", &block_hash } });
-        }
+        public:
 
-        bool decode(const YAML::Node& node) 
-        { 
-            return decode_(node, {
-                    { "deposit_root", &deposit_root},
-                    { "deposit_count", &deposit_count},
-                    { "block_hash", &block_hash } });
-        }
+            Boolean(bool s=false) : value_ {s} {};
+            operator bool() const {return value_;};
+            operator bool&() {return value_; }
+            operator Bytes<1>() const {return char(value_); }
+            virtual std::vector<std::byte> serialize() const {return Bytes<1>(value_).serialize();}
+
+            static constexpr std::size_t ssz_size = 1;
+            std::size_t get_ssz_size() const { return ssz_size; }
+
+            YAML::Node encode() const { return YAML::convert<bool>::encode(value_); } 
+            bool decode(const YAML::Node& node) { return YAML::convert<bool>::decode(node, value_); }
     };
 }
+

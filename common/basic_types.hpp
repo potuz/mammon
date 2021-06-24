@@ -21,12 +21,16 @@
 
 #pragma once
 #include "slot.hpp"
+#include "boolean.hpp"
 
 namespace eth 
 {
     using Epoch = Slot;
+    using Counter = Slot;
+    using UnixTime = Slot;
     using CommitteeIndex = Slot;
     using ValidatorIndex = Slot;
+    using DepositIndex = Slot;
     using Gwei = Slot;
 
     using Root = Bytes32;

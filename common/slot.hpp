@@ -26,6 +26,7 @@
 #include <cstdint>
 #include "yaml-cpp/yaml.h"
 
+
 namespace eth
 {
     class Slot : public ssz::Container
@@ -36,28 +37,17 @@ namespace eth
 
         public:
 
-            Slot(std::uint64_t s=0) : ssz::Container(8), value_ {s} {};
+            constexpr Slot(std::uint64_t s=0) : value_ {s} {};
             operator std::uint64_t() const {return value_;};
             operator std::uint64_t&() {return value_; }
             operator Bytes8() const {return value_; }
             virtual std::vector<std::byte> serialize() const {return Bytes8(value_).serialize();}
+
+            static constexpr std::size_t ssz_size = 8;
+            std::size_t get_ssz_size() const { return ssz_size; }
+
+            YAML::Node encode() const { return YAML::convert<std::uint64_t>::encode(value_); } 
+            bool decode(const YAML::Node& node) { return YAML::convert<std::uint64_t>::decode(node, value_); }
     };
 }
 
-namespace YAML
-{
-    template<>
-    struct convert<eth::Slot>
-    {
-        static Node encode(const eth::Slot& s)
-        {
-            return Node(std::uint64_t(s));
-        }
-
-        static bool decode(const Node& node, eth::Slot& s)
-        {
-            s = node.as<std::uint64_t>();
-            return true;
-        }
-    };
-}

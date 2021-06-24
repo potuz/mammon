@@ -21,19 +21,61 @@
 
 #pragma once
 
-include "common/types.h" 
+#include "common/basic_types.hpp" 
+#include "ssz/ssz_container.hpp"
 
 namespace eth
 {
-    class Validator
+    class Validator : public ssz::Container
     {
         private:
             BLSPubkey pubkey;
-            Bytes32 withrawal_credentials;
+            Bytes32 withdrawal_credentials;
             Gwei effective_balance;
-            bool slashed;
-
+            Boolean slashed;
             Epoch activation_eligibility_epoch, activation_epoch, exit_epoch, withdrawable_epoch;
-    }
 
-};
+        public:
+            static constexpr std::size_t ssz_size = 153;
+            std::size_t get_ssz_size() const { return ssz_size; } 
+            BytesVector serialize() const
+            {
+                return serialize_({
+                        &pubkey, 
+                        &withdrawal_credentials,
+                        &effective_balance,
+                        &slashed,
+                        &activation_eligibility_epoch,
+                        &activation_epoch,
+                        &exit_epoch,
+                        &withdrawable_epoch}); 
+            }
+
+            YAML::Node encode() const
+            { 
+                return encode_({
+                        { "pubkey", &pubkey}, 
+                        { "withdrawal_credentials", &withdrawal_credentials},
+                        { "effective_balance", &effective_balance},
+                        { "slashed", &slashed},
+                        { "activation_eligibility_epoch", &activation_eligibility_epoch},
+                        { "activation_epoch", &activation_epoch},
+                        { "exit_epoch", &exit_epoch},
+                        { "withdrawable_epoch", &withdrawable_epoch} }); 
+            }
+
+            bool decode(const YAML::Node& node) 
+            { 
+                return decode_(node, {
+                        { "pubkey", &pubkey}, 
+                        { "withdrawal_credentials", &withdrawal_credentials},
+                        { "effective_balance", &effective_balance},
+                        { "slashed", &slashed},
+                        { "activation_eligibility_epoch", &activation_eligibility_epoch},
+                        { "activation_epoch", &activation_epoch},
+                        { "exit_epoch", &exit_epoch},
+                        { "withdrawable_epoch", &withdrawable_epoch} }); 
+            }
+
+    };
+}

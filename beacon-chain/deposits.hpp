@@ -22,129 +22,89 @@
 #pragma once
 #include <numeric>
 #include "config.hpp"
-#include "common/types.hpp"
+#include "common/basic_types.hpp"
+#include "ssz/ssz_container.hpp"
 #include "yaml-cpp/yaml.h"
 
 namespace eth
 {
-    struct DepositMessage
+    struct DepositMessage : public ssz::Container
     {
         BLSPubkey pubkey;
         Bytes32 withdrawal_credentials;
         Gwei amount;
 
-        eth::Bytes<88> serialize() const
-        {
-            return pubkey + withdrawal_credentials + Bytes8(amount);
+        static constexpr std::size_t ssz_size = 88;
+        std::size_t get_ssz_size() const { return ssz_size; } 
+        BytesVector serialize() const { return serialize_({&pubkey, &withdrawal_credentials, &amount}); }
+        YAML::Node encode() const
+        { 
+            return encode_({
+                    { "pubkey", &pubkey },
+                    { "withdrawal_credentials", &withdrawal_credentials },
+                    { "amount", &amount } });
+        }
+
+        bool decode(const YAML::Node& node) 
+        { 
+            return decode_(node, {
+                    { "pubkey", &pubkey },
+                    { "withdrawal_credentials", &withdrawal_credentials },
+                    { "amount", &amount } });
         }
     };
 
-    struct DepositData
+    struct DepositData : public ssz::Container
     {
         BLSPubkey pubkey;
         Bytes32 withdrawal_credentials;
         Gwei amount;
         BLSSignature signature;
 
-        eth::Bytes<184> serialize() const
-        {
-            return pubkey + withdrawal_credentials + Bytes8(amount) + signature;
+        static constexpr std::size_t ssz_size = 184;
+        std::size_t get_ssz_size() const { return ssz_size; } 
+        BytesVector serialize() const { return serialize_({&pubkey, &withdrawal_credentials, &amount, &signature}); }
+        YAML::Node encode() const
+        { 
+            return encode_({
+                    { "pubkey", &pubkey },
+                    { "withdrawal_credentials", &withdrawal_credentials },
+                    { "amount", &amount },
+                    { "signature", &signature} });
+        }
+
+        bool decode(const YAML::Node& node) 
+        { 
+            return decode_(node, {
+                    { "pubkey", &pubkey },
+                    { "withdrawal_credentials", &withdrawal_credentials },
+                    { "amount", &amount },
+                    { "signature", &signature} });
         }
     };
 
-    struct Deposit
+    struct Deposit : public ssz::Container
     {
-        std::array<Bytes32, constants::DEPOSIT_CONTRACT_TREE_DEPTH + 1> proof;
+        VectorFixedSizedParts<Bytes32, constants::DEPOSIT_CONTRACT_TREE_DEPTH + 1> proof;
         eth::DepositData data;
 
-        eth::Bytes<32*constants::DEPOSIT_CONTRACT_TREE_DEPTH + 216> serialize() const
-        {
-            Bytes<32*(constants::DEPOSIT_CONTRACT_TREE_DEPTH + 1)> ret(0);
-            for (int i = 0; i < proof.size(); ++i)
-                std::copy(proof[i].cbegin(), proof[i].cend(), ret.begin()+32*i);
-            return ret + data.serialize();
+        static constexpr std::size_t ssz_size = 32*constants::DEPOSIT_CONTRACT_TREE_DEPTH + 216;
+        std::size_t get_ssz_size() const { return ssz_size; } 
+        BytesVector serialize() const { return serialize_({&proof, &data}); }
+
+        YAML::Node encode() const
+        { 
+            return encode_({
+                    { "proof", &proof },
+                    { "data", &data } });
         }
+
+        bool decode(const YAML::Node& node) 
+        { 
+            return decode_(node, {
+                    { "proof", &proof },
+                    { "data", &data } });
+        }
+
     };
 }
-
-namespace YAML
-{
-    template<>
-    struct convert<eth::DepositMessage>
-    {
-        static Node encode(const eth::DepositMessage& dep)
-        {
-            Node node;
-            node["pubkey"] = dep.pubkey.to_string();
-            node["withdrawal_credentials"] = dep.withdrawal_credentials.to_string();
-            node["amount"] = dep.amount; 
-            return node;
-        }
-
-        static bool decode(const Node& node, eth::DepositMessage& dep)
-        {
-            if ((node.Type() != NodeType::Map) || node.size() != 3)
-                return false;
-
-            dep.pubkey = node["pubkey"].as<std::string>();
-            dep.withdrawal_credentials = node["withdrawal_credentials"].as<std::string>();
-            dep.amount = node["amount"].as<eth::Gwei>();
-            return true;
-        }
-    };
-    
-    template<>
-    struct convert<eth::DepositData>
-    {
-        static Node encode(const eth::DepositData& dep)
-        {
-            Node node;
-            node["pubkey"] = dep.pubkey.to_string();
-            node["withdrawal_credentials"] = dep.withdrawal_credentials.to_string();
-            node["amount"] = dep.amount; 
-            node["signature"] = dep.signature.to_string();
-            return node;
-        }
-
-        static bool decode(const Node& node, eth::DepositData& dep)
-        {
-            if ((node.Type() != NodeType::Map) || node.size() != 4)
-                return false;
-
-            dep.pubkey = node["pubkey"].as<std::string>();
-            dep.withdrawal_credentials = node["withdrawal_credentials"].as<std::string>();
-            dep.amount = node["amount"].as<eth::Gwei>();
-            dep.signature = node["signature"].as<std::string>();
-            return true;
-        }
-    };
-
-    template<>
-    struct convert<eth::Deposit>
-    {
-        static Node encode(const eth::Deposit& dep)
-        {
-            Node node;
-            std::vector<std::string> proof;
-            for (const auto &root : dep.proof)
-                proof.push_back(root.to_string());
-            node["proof"] = proof;
-            node["data"] = dep.data;
-            return node;
-        }
-
-        static bool decode(const Node& node, eth::Deposit& dep)
-        {
-            if ((node.Type() != NodeType::Map) || node.size() != 2)
-                return false;
-
-            auto proof = node["proof"].as<std::array<std::string, constants::DEPOSIT_CONTRACT_TREE_DEPTH +1>>();
-            for (int i = 0; i < constants::DEPOSIT_CONTRACT_TREE_DEPTH + 1; ++i)
-                dep.proof[i] = proof[i];
-            dep.data = node["data"].as<eth::DepositData>();
-            return true;
-        }
-    };
-
-}
- 

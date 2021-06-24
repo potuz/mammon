@@ -23,7 +23,6 @@
 
 #include <cstdint>
 #include "common/types.hpp"
-#include "config/shared.hpp"
 
 using namespace std::string_literals;
 namespace constants
@@ -60,4 +59,10 @@ const int DEPOSIT_NETWORK_ID = 1;
 const eth::Eth1Address DEPOSIT_CONTRACT_ADDRESS = "0x00000000219ab540356cBB839Cbe05303d7705Fa"s;
 
 const std::string TEST_VECTORS_PATH = "../../../eth2.0-spec-tests/tests/mainnet/phase0/ssz_static/";
+
+constexpr int DEPOSIT_CONTRACT_TREE_DEPTH = 32;
+constexpr std::uint64_t SLOTS_PER_HISTORICAL_ROOT = 8192;
+constexpr std::uint64_t EPOCHS_PER_SLASHING_VECTOR = 8192;
+constexpr std::uint64_t EPOCHS_PER_HISTORICAL_VECTOR = 65536;
+constexpr std::uint64_t JUSTIFICATION_BITS_LENGTH = 4;
 }

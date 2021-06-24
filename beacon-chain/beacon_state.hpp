@@ -20,30 +20,35 @@
  */
 
 #pragma once
+#include "common/basic_types.hpp"
 #include "beacon_block.hpp" 
+#include "ssz/ssz_container.hpp"
 
 namespace eth
 {
-    class BeaconState
+    class BeaconState : public ssz::Container
     {
         private:
-            std::uint64_t   genesis_time_;
-            Root            genesis_validators_root_;
+            UnixTime   genesis_time_;
+            Root       genesis_validators_root_;
             Slot    slot_;
             Fork    fork_;
             BeaconBlockHeader   latest_block_header_;
-            std::vector<Root> blocks_roots_, state_roots_;
+            VectorFixedSizedParts<Root, constants::SLOTS_PER_HISTORICAL_ROOT> block_roots_, state_roots_;
+            ListFixedSizedParts<Root> historical_roots_;
             Eth1Data   eth1_data_;
-            std::vector<Eth1Data>   eth1_data_votes_;
-            std::vector<Validator>  validators_;
-            std::vector<Gwei>       balances_, slashings_;
-            std::vector<Bytes32>    randao_mixes_;
-            std::vector<PendingAttestation> previous_epoch_attestations_, current_epoch_attestations_;
-            std::vector<bool>   justification_bits_;
+            ListFixedSizedParts<Eth1Data>   eth1_data_votes_;
+            DepositIndex                    eth1_deposit_index_;
+            ListFixedSizedParts<Validator>  validators_;
+            ListFixedSizedParts<Gwei>       balances_;
+            VectorFixedSizedParts<Bytes32,constants::EPOCHS_PER_HISTORICAL_VECTOR>    randao_mixes_;
+            VectorFixedSizedParts<Gwei, constants::EPOCHS_PER_SLASHING_VECTOR> slashings_;
+            ListVariableSizedParts<PendingAttestation> previous_epoch_attestations_, current_epoch_attestations_;
+            Bitvector<constants::JUSTIFICATION_BITS_LENGTH>   justification_bits_;
             Checkpoint  previous_justified_checkpoint_, current_justified_checkpoint_, finalized_checkpoint_;
 
         public:
-            constexpr std::uint64_t genesis_time() const
+            constexpr UnixTime genesis_time() const
             {
                 return genesis_time_;
             }
@@ -63,47 +68,55 @@ namespace eth
             {
                 return latest_block_header_;
             }
-            constexpr const std::vector<Root>& blocks_roots() const
+            constexpr const auto& block_roots() const
             {
-                return blocks_roots_;
+                return block_roots_;
             }
-            constexpr const std::vector<Root>& state_roots() const
+            constexpr const auto& state_roots() const
             {
                 return state_roots_;
+            }
+            constexpr const auto& historical_roots() const
+            {
+                return historical_roots_;
             }
             constexpr const Eth1Data& eth1_data() const
             {
                 return eth1_data_;
             }
-            constexpr const std::vector<Eth1Data>& eth1_data_votes() const
+            constexpr const auto& eth1_data_votes() const
             {
                 return eth1_data_votes_;
             }
-            constexpr const std::vector<Validator>& validators() const
+            constexpr const auto& eth1_deposit_index() const
+            {
+                return eth1_deposit_index_;
+            }
+            constexpr const auto& validators() const
             {
                 return validators_;
             }
-            constexpr const std::vector<Gwei>& balances() const
+            constexpr const auto& balances() const
             {
                 return balances_;
             }
-            constexpr const std::vector<Gwei>& slashings() const
+            constexpr const auto& slashings() const
             {
                 return slashings_;
             }
-            constexpr const std::vector<Bytes32>& randao_mixes() const
+            constexpr const auto& randao_mixes() const
             {
                 return randao_mixes_;
             }
-            constexpr const std::vector<PendingAttestation>& previous_epoch_attestations() const
+            constexpr const auto& previous_epoch_attestations() const
             {
                 return previous_epoch_attestations_;
             }
-            constexpr const std::vector<PendingAttestation>& current_epoch_attestations() const
+            constexpr const auto& current_epoch_attestations() const
             {
                 return current_epoch_attestations_;
             }
-            constexpr const std::vector<bool> justification_bits() const
+            constexpr const auto& justification_bits() const
             {
                 return justification_bits_;
             }
@@ -120,15 +133,18 @@ namespace eth
                 return finalized_checkpoint_;
             }
 
-            void genesis_time(std::uint64_t);
+/*
+            void genesis_time(UnixTime);
             void genesis_validators_root(Root);
             void slot(Slot);
             void fork(Fork);
             void latest_block_header(BeaconBlockHeader);
-            void blocks_roots(std::vector<Root>);
+            void block_roots(<Root>);
             void state_roots(std::vector<Root>);
+            void historical_roots(std::vector<Root>);
             void eth1_data(Eth1Data);
             void eth1_data_votes(std::vector<Eth1Data>);
+            void eth1_deposit_index(DepositIndex);
             void validators(std::vector<Validator>);
             void balances(std::vector<Gwei>);
             void slashings(std::vector<Gwei>);
@@ -139,6 +155,85 @@ namespace eth
             void previous_justified_checkpoint(Checkpoint);
             void current_justified_checkpoint(Checkpoint);
             void finalized_checkpoint(Checkpoint);
+            */
+
+            BytesVector serialize() const
+            {
+                return serialize_({
+                        &genesis_time_,
+                        &genesis_validators_root_,
+                        &slot_,
+                        &fork_,
+                        &latest_block_header_,
+                        &block_roots_,
+                        &state_roots_,
+                        &historical_roots_,
+                        &eth1_data_,
+                        &eth1_data_votes_,
+                        &eth1_deposit_index_,
+                        &validators_,
+                        &balances_,
+                        &randao_mixes_,
+                        &slashings_,
+                        &previous_epoch_attestations_,
+                        &current_epoch_attestations_,
+                        &justification_bits_,
+                        &previous_justified_checkpoint_,
+                        &current_justified_checkpoint_,
+                        &finalized_checkpoint_});
+            }
+
+            YAML::Node encode() const
+            { 
+                return encode_({
+                        {"genesis_time", &genesis_time_},
+                        {"genesis_validators_root", &genesis_validators_root_},
+                        {"slot", &slot_},
+                        {"fork", &fork_},
+                        {"latest_block_header", &latest_block_header_},
+                        {"block_roots", &block_roots_},
+                        {"state_roots", &state_roots_},
+                        {"historical_roots", &historical_roots_},
+                        {"eth1_data", &eth1_data_},
+                        {"eth1_data_votes", &eth1_data_votes_},
+                        {"eth1_deposit_index", &eth1_deposit_index_},
+                        {"validators", &validators_},
+                        {"balances", &balances_},
+                        {"randao_mixes", &randao_mixes_},
+                        {"slashings", &slashings_},
+                        {"previous_epoch_attestations", &previous_epoch_attestations_},
+                        {"current_epoch_attestations", &current_epoch_attestations_},
+                        {"justification_bits", &justification_bits_},
+                        {"previous_justified_checkpoint", &previous_justified_checkpoint_},
+                        {"current_justified_checkpoint", &current_justified_checkpoint_},
+                        {"finalized_checkpoint", &finalized_checkpoint_} });
+            }
+
+            bool decode(const YAML::Node& node) 
+            { 
+                return decode_(node, {
+                        {"genesis_time", &genesis_time_},
+                        {"genesis_validators_root", &genesis_validators_root_},
+                        {"slot", &slot_},
+                        {"fork", &fork_},
+                        {"latest_block_header", &latest_block_header_},
+                        {"block_roots", &block_roots_},
+                        {"state_roots", &state_roots_},
+                        {"historical_roots", &historical_roots_},
+                        {"eth1_data", &eth1_data_},
+                        {"eth1_data_votes", &eth1_data_votes_},
+                        {"eth1_deposit_index", &eth1_deposit_index_},
+                        {"validators", &validators_},
+                        {"balances", &balances_},
+                        {"randao_mixes", &randao_mixes_},
+                        {"slashings", &slashings_},
+                        {"previous_epoch_attestations", &previous_epoch_attestations_},
+                        {"current_epoch_attestations", &current_epoch_attestations_},
+                        {"justification_bits", &justification_bits_},
+                        {"previous_justified_checkpoint", &previous_justified_checkpoint_},
+                        {"current_justified_checkpoint", &current_justified_checkpoint_},
+                        {"finalized_checkpoint", &finalized_checkpoint_} });
+            }
     };
 }
 

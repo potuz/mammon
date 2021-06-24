@@ -35,16 +35,56 @@ namespace eth
         Root beacon_block_root;
         Checkpoint source, target;
 
-        AttestationData() : ssz::Container(128) {}
+        static constexpr std::size_t ssz_size = 128;
+        std::size_t get_ssz_size() const { return ssz_size; } 
         BytesVector serialize() const { return serialize_({&slot, &index, &beacon_block_root, &source, &target}); }
+
+        YAML::Node encode() const
+        { 
+            return encode_({
+                    { "slot", &slot },
+                    { "index", &index },
+                    { "beacon_block_root", &beacon_block_root },
+                    { "source", &source },
+                    { "target", &target } });
+        }
+
+        bool decode(const YAML::Node& node) 
+        { 
+            return decode_(node, {
+                    { "slot", &slot },
+                    { "index", &index },
+                    { "beacon_block_root", &beacon_block_root },
+                    { "source", &source },
+                    { "target", &target } });
+        }
 
     };
 
-    struct IndexedAttestation
+    struct IndexedAttestation : public ssz::Container
     {
-        std::vector<ValidatorIndex> attesting_indices;
+        ListFixedSizedParts<ValidatorIndex> attesting_indices;
         AttestationData data;
         BLSSignature signature;
+
+        BytesVector serialize() const { return serialize_({&attesting_indices, &data, &signature}); }
+
+        YAML::Node encode() const
+        { 
+            return encode_({
+                    { "attesting_indices", &attesting_indices },
+                    { "data", &data },
+                    { "signature", &signature } });
+        }
+
+        bool decode(const YAML::Node& node) 
+        { 
+            return decode_(node, {
+                    { "attesting_indices", &attesting_indices },
+                    { "data", &data },
+                    { "signature", &signature } });
+        }
+
     };
 
     struct PendingAttestation : public ssz::Container
@@ -58,124 +98,54 @@ namespace eth
         {
             return serialize_({&aggregation_bits, &data, &inclusion_delay, &proposer_index});
         }
+
+        YAML::Node encode() const
+        { 
+            return encode_({
+                    { "aggregation_bits", &aggregation_bits },
+                    { "data", &data },
+                    { "inclusion_delay", &inclusion_delay },
+                    { "proposer_index", &proposer_index} });
+        }
+
+        bool decode(const YAML::Node& node) 
+        { 
+            return decode_(node, {
+                    { "aggregation_bits", &aggregation_bits },
+                    { "data", &data },
+                    { "inclusion_delay", &inclusion_delay },
+                    { "proposer_index", &proposer_index} });
+        }
+
     };
 
-    struct Attestation
+    struct Attestation : public ssz::Container
     {
         eth::Bitlist aggregation_bits;
         AttestationData data;
         BLSSignature signature;
 
-        std::vector<std::byte> serialize() const;
+        BytesVector serialize() const
+        {
+            return serialize_({&aggregation_bits, &data, &signature});
+        }
+        YAML::Node encode() const
+        { 
+            return encode_({
+                    { "aggregation_bits", &aggregation_bits },
+                    { "data", &data },
+                    { "signature", &signature } });
+        }
+
+        bool decode(const YAML::Node& node) 
+        { 
+            return decode_(node, {
+                    { "aggregation_bits", &aggregation_bits },
+                    { "data", &data },
+                    { "signature", &signature } });
+        }
+
     };
             
 };
 
-namespace YAML
-{
-    template<>
-    struct convert<eth::AttestationData>
-    {
-        static Node encode(const eth::AttestationData& attdata)
-        {
-            Node node;
-            node["slot"] = attdata.slot;
-            node["index"] = attdata.index;
-            node["beacon_block_root"] = attdata.beacon_block_root.to_string();
-            node["source"] = attdata.source;
-            node["target"] = attdata.target;
-            return node;
-        }
-
-        static bool decode(const Node& node, eth::AttestationData& attdata)
-        {
-            if ((node.Type() != NodeType::Map) || node.size() != 5)
-                return false;
-
-            attdata.slot = node["slot"].as<eth::Slot>();
-            attdata.index = node["index"].as<eth::CommitteeIndex>();
-            attdata.beacon_block_root = node["beacon_block_root"].as<std::string>();
-            attdata.source = node["source"].as<eth::Checkpoint>();
-            attdata.target = node["target"].as<eth::Checkpoint>();
-            return true;
-        }
-    };
-    template<>
-    struct convert<eth::IndexedAttestation>
-    {
-        static Node encode(const eth::IndexedAttestation& indexed)
-        {
-            Node node;
-            node["attesting_indices"] = indexed.attesting_indices;
-            node["data"] = indexed.data;
-            node["signature"] = indexed.signature.to_string();
-            return node;
-        }
-
-        static bool decode(const Node& node, eth::IndexedAttestation& indexed)
-        {
-            if ((node.Type() != NodeType::Map) || node.size() != 3)
-                return false;
-
-            indexed.attesting_indices = node["attesting_indices"].as<std::vector<eth::ValidatorIndex>>();
-            indexed.data = node["data"].as<eth::AttestationData>();
-            indexed.signature = node["signature"].as<std::string>();
-            return true;
-        }
-    };
-
-    template<>
-    struct convert<eth::PendingAttestation>
-    {
-        static Node encode(const eth::PendingAttestation& pending)
-        {
-            Node node;
-            node["aggregation_bits"] = pending.aggregation_bits.to_string();
-            node["data"] = pending.data;
-            node["inclusion_delay"] = pending.inclusion_delay;
-            node["proposer_index"] = pending.proposer_index;
-            return node;
-        }
-
-        static bool decode(const Node& node, eth::PendingAttestation& pending)
-        {
-            if ((node.Type() != NodeType::Map) || node.size() != 4)
-                return false;
-
-            eth::Bitlist aggrbits;
-            aggrbits.from_hexstring(node["aggregation_bits"].as<std::string>());
-            pending.aggregation_bits = aggrbits;
-            pending.data = node["data"].as<eth::AttestationData>();
-            pending.inclusion_delay = node["inclusion_delay"].as<eth::Slot>();
-            pending.proposer_index = node["proposer_index"].as<eth::ValidatorIndex>();
-            return true;
-        }
-    };
-    
-    template<>
-    struct convert<eth::Attestation>
-    {
-        static Node encode(const eth::Attestation& att)
-        {
-            Node node;
-            node["aggregation_bits"] = att.aggregation_bits.to_string();
-            node["data"] = att.data;
-            node["signature"] = att.signature.to_string();
-            return node;
-        }
-
-        static bool decode(const Node& node, eth::Attestation& att)
-        {
-            if ((node.Type() != NodeType::Map) || node.size() != 3)
-                return false;
-
-            eth::Bitlist aggrbits;
-            aggrbits.from_hexstring(node["aggregation_bits"].as<std::string>());
-            att.aggregation_bits = aggrbits;
-            att.data = node["data"].as<eth::AttestationData>();
-            att.signature = node["signature"].as<std::string>();
-            return true;
-        }
-    };
-}
- 

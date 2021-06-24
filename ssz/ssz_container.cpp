@@ -38,11 +38,11 @@ namespace ssz
         std::uint32_t fixed_length = 0;
         auto sum_lengths = [&fixed_length](const Container* part)
         {
-            if (part->size_ == 0)
+            if (part->get_ssz_size() == 0)
             {
                 fixed_length += constants::BYTES_PER_LENGTH_OFFSET;
             } else {
-                fixed_length += std::uint32_t(part->size_);
+                fixed_length += std::uint32_t(part->get_ssz_size());
             }
         };
         std::for_each(parts.cbegin(), parts.cend(), sum_lengths);
@@ -52,7 +52,7 @@ namespace ssz
         for(auto * part : parts)
         {
             auto part_ssz = part->serialize();
-            if (part->size_ == 0)
+            if (part->get_ssz_size() == 0)
             {
                 eth::Bytes4 offset (fixed_length);
                 ret.insert(ret.end(), offset.begin(), offset.end());
@@ -67,4 +67,17 @@ namespace ssz
         return ret;
     }
 
+    bool Container::decode_(const YAML::Node& node, std::vector<Part> parts)
+    {
+        return std::all_of(parts.begin(), parts.end(), 
+                [&node](Part part) { return part.second->decode(node[part.first]); });
+    }
+
+    YAML::Node Container::encode_(std::vector<ConstPart> parts)
+    {
+        YAML::Node node;
+        for (auto part : parts)
+            node[part.first] = part.second->encode();
+        return node;
+    }
 }

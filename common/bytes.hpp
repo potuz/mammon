@@ -82,12 +82,12 @@ namespace eth
 
         public:
 
-            Bytes() : ssz::Container(N), m_arr {} {}; 
-            Bytes( const Bytes& b ) : ssz::Container(N), m_arr {b.m_arr} {};
-            Bytes( std::string hex ) : ssz::Container(N), m_arr {bytes_from_str(hex)} {};
-            Bytes( std::integral auto value ) : ssz::Container(N), m_arr { bytes_from_int(value) } {};
-            Bytes( std::array<std::byte,N> arr ) : ssz::Container(N), m_arr {arr} {};
-            Bytes( std::vector<std::byte> arr ) : ssz::Container(N)
+            Bytes() : m_arr {} {}; 
+            Bytes( const Bytes& b ) : m_arr {b.m_arr} {};
+            Bytes( std::string hex ) : m_arr {bytes_from_str(hex)} {};
+            Bytes( std::integral auto value ) : m_arr { bytes_from_int(value) } {};
+            Bytes( std::array<std::byte,N> arr ) : m_arr {arr} {};
+            Bytes( std::vector<std::byte> arr ) 
             {
                 if (arr.size() != N)
                     throw std::out_of_range ("vector of different size than bytes");
@@ -126,6 +126,11 @@ namespace eth
                 std::cout.flags(save);
                 return os.str();
             };
+
+            void from_string(std::string hex)
+            {
+                m_arr = bytes_from_str(hex);
+            }
 
             std::byte& operator [](std::size_t index)
             {
@@ -170,10 +175,9 @@ namespace eth
                 return Bytes<N+M>(ret);
             }
 
-            std::size_t size(void) const
-            {
-                return N;
-            }
+            static constexpr std::size_t ssz_size = N;
+            static constexpr std::size_t size() { return N; }
+            std::size_t get_ssz_size() const { return N; }
 
             constexpr typename std::array<std::byte, N>::iterator begin() noexcept
             {
@@ -194,6 +198,20 @@ namespace eth
             {
                 return m_arr.cend();
             }
+
+            YAML::Node encode() const 
+            {
+                auto str = this->to_string();
+                return YAML::convert<std::string>::encode(str);
+            }
+            bool decode(const YAML::Node& node)
+            { 
+                std::string str;
+                if (!YAML::convert<std::string>::decode(node, str))
+                    return false;
+                this->from_string(str);
+                return true;
+            }
     };
 
     using Bytes4 = Bytes<4>;
@@ -204,25 +222,4 @@ namespace eth
     using Bytes96 = Bytes<96>;
 
     using BytesVector = std::vector<std::byte>;
-}
-namespace YAML
-{
-    template <
-        template <std::size_t> class C,
-        std::size_t N
-    >
-    requires std::is_same<C<N>, eth::Bytes<N>>::value
-    struct convert<C<N>>
-    {
-        static Node encode(const C<N>& b)
-        {
-            return Node(b.to_string());
-        }
-
-        static bool decode(const Node& node, C<N>& b)
-        {
-            b = node.as<std::string>();
-            return true;
-        }
-    };
 }

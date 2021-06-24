@@ -82,6 +82,18 @@ namespace eth
         return os.str();
     };
 
- 
+    YAML::Node Bitlist::encode() const
+    {
+        auto str = this->to_string();
+        return YAML::convert<std::string>::encode(str);
+    }
+    bool Bitlist::decode(const YAML::Node& node)
+    { 
+        std::string str;
+        if (!YAML::convert<std::string>::decode(node, str))
+            return false;
+        this->from_hexstring(str);
+        return true;
+    }
 
 } 
