@@ -42,7 +42,7 @@ namespace eth
             ListFixedSizedParts<Validator>  validators_;
             ListFixedSizedParts<Gwei>       balances_;
             VectorFixedSizedParts<Bytes32,constants::EPOCHS_PER_HISTORICAL_VECTOR>    randao_mixes_;
-            VectorFixedSizedParts<Gwei, constants::EPOCHS_PER_SLASHING_VECTOR> slashings_;
+            VectorFixedSizedParts<Gwei, constants::EPOCHS_PER_SLASHINGS_VECTOR> slashings_;
             ListVariableSizedParts<PendingAttestation> previous_epoch_attestations_, current_epoch_attestations_;
             Bitvector<constants::JUSTIFICATION_BITS_LENGTH>   justification_bits_;
             Checkpoint  previous_justified_checkpoint_, current_justified_checkpoint_, finalized_checkpoint_;
