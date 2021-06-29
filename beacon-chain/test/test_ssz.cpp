@@ -24,7 +24,7 @@
 #include <fstream>
 #include "acutest.h" 
 #include "config.hpp"
-#include "common/types.hpp" 
+#include "common/bitvector.hpp"
 #include "beacon-chain/attestation.hpp" 
 #include "beacon-chain/eth1data.hpp" 
 #include "beacon-chain/deposits.hpp" 
@@ -126,5 +126,3 @@ TEST_LIST = {
     { "serialize_beaconstate", test_beaconstate},
     { NULL, NULL }
 };
-
-

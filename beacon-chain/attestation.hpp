@@ -21,9 +21,9 @@
 
 #pragma once
 
-#include "common/types.hpp"
+#include "common/containers.hpp"
+#include "common/bitlist.hpp"
 #include "yaml-cpp/yaml.h"
-#include "ssz/ssz_container.hpp" 
 
 namespace eth
 {

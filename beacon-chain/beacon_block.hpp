@@ -25,7 +25,7 @@
 #include "config.hpp"
 #include "ssz/ssz.hpp"
 #include "ssz/ssz_container.hpp"
-#include "common/types.hpp"
+#include "common/basic_types.hpp"
 #include "attestation.hpp"
 #include "eth1data.hpp"
 #include "deposits.hpp"

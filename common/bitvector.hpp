@@ -23,6 +23,9 @@
 #pragma once
 #include <array>
 #include <cassert>
+#include <iomanip>
+#include <iostream>
+#include "common/bytes.hpp"
 #include "ssz/ssz_container.hpp"
 #include "yaml-cpp/yaml.h"
 

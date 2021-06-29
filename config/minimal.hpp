@@ -22,7 +22,7 @@
 #pragma once
 
 #include <cstdint>
-#include "common/types.hpp"
+#include "common/basic_types.hpp"
 
 using namespace std::string_literals;
 
