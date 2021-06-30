@@ -28,6 +28,8 @@
 #include <iomanip>
 #include <iostream>
 #include <concepts>
+#include <cstring>
+#include <bit>
 #include "ssz/ssz_container.hpp"
 #include "yaml-cpp/yaml.h"
 
@@ -40,18 +42,21 @@ namespace eth
 
             std::array<std::byte, N> m_arr;
 
-            static auto bytes_from_int(std::integral auto value) -> std::array<std::byte, N> 
+            //The caller must check that the integral value fits in the array. 
+            constexpr static auto bytes_from_int(std::integral auto value) -> std::array<std::byte, N> 
             {
-                if (sizeof(value) > N)
-                    throw std::out_of_range("integer type is larger than bytes size");
-
                 std::array<std::byte, N> ret_arr = {};
-                for (int i = 0; (i < sizeof(value)) && (i < N); ++i)
-                    ret_arr[i] = std::byte( (value >> 8*i) & 0xff);
-                
+                if constexpr (std::endian::native == std::endian::big) {
+                    std::memcpy(ret_arr.data() + N - 1 - sizeof(value), &value, sizeof(value));
+                    std::reverse(ret_arr.begin(), ret_arr.end());
+                } 
+                // We assume if it's not big endian we are little endian
+                else
+                {
+                    std::memcpy(ret_arr.data(), &value, sizeof(value));
+                }
                 return ret_arr;
             }
-
             static auto chars_to_byte(std::string const & c) -> std::byte
             {
                     unsigned int x;
@@ -83,9 +88,8 @@ namespace eth
         public:
 
             Bytes() : m_arr {} {}; 
-            Bytes( const Bytes& b ) : m_arr {b.m_arr} {};
             Bytes( std::string hex ) : m_arr {bytes_from_str(hex)} {};
-            Bytes( std::integral auto value ) : m_arr { bytes_from_int(value) } {};
+            Bytes( std::integral auto value ) requires (sizeof(value) <= N) : m_arr { bytes_from_int(value) } {};
             Bytes( std::array<std::byte,N> arr ) : m_arr {arr} {};
             Bytes( std::vector<std::byte> arr ) 
             {
@@ -93,6 +97,8 @@ namespace eth
                     throw std::out_of_range ("vector of different size than bytes");
                 std::copy_n(arr.begin(), N, m_arr.begin());
             }
+            template<typename ...T>     // is_convertible_v<..,std::byte> fails. 
+            Bytes(T&&...l) : m_arr{{std::forward<std::byte>(std::byte(l))...}}  {};
 
             virtual std::vector<std::byte> serialize() const
             {
@@ -130,6 +136,13 @@ namespace eth
             void from_string(std::string hex)
             {
                 m_arr = bytes_from_str(hex);
+            }
+
+            template<typename T> requires (std::unsigned_integral<T> && sizeof(T) == N)
+            T to_integer_little_endian() const
+            {
+                auto ptr = reinterpret_cast<const T*>(m_arr.data());
+                return *ptr;
             }
 
             std::byte& operator [](std::size_t index)
@@ -214,6 +227,7 @@ namespace eth
             }
     };
 
+    using Bytes1 = Bytes<1>;
     using Bytes4 = Bytes<4>;
     using Bytes8 = Bytes<8>;
     using Bytes20 = Bytes<20>;

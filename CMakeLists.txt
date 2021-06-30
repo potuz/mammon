@@ -35,7 +35,9 @@ add_executable (beacon-chain
 	beacon-chain/main.cpp
 	)
 
+
 target_include_directories(beacon-chain PUBLIC
+			   "${CMAKE_SOURCE_DIR}/include"
 			   "${CMAKE_BINARY_DIR}/include"
 			  )
 
@@ -52,6 +54,7 @@ add_executable(test_ssz
 		)
 
 target_include_directories(test_ssz PUBLIC
+			   "${CMAKE_SOURCE_DIR}/include"
 			   "${CMAKE_BINARY_DIR}/include"
 			  )
 
@@ -59,7 +62,18 @@ target_link_libraries(test_ssz
                       snappy
                       yaml-cpp)
 
+add_executable(test_bytes
+                ssz/ssz_container.cpp
+                common/bytes_test.cpp)
+
+target_include_directories(test_bytes PUBLIC
+			   "${CMAKE_SOURCE_DIR}/include"
+			   "${CMAKE_BINARY_DIR}/include"
+			  )
+
+target_link_libraries(test_bytes
+                      yaml-cpp)
 enable_testing()
 
 add_test(test_ssz test_ssz)
-
+add_test(test_bytes test_bytes)
