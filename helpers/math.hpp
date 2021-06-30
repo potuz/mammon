@@ -1,4 +1,4 @@
-/*  helpers.hpp 
+/*  math.hpp 
  * 
  *  This file is part of Mammon. 
  *  mammon is a greedy and selfish ETH consensus client. 
