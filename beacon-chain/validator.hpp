@@ -36,11 +36,23 @@ namespace eth
             Epoch activation_eligibility_epoch, activation_epoch, exit_epoch, withdrawable_epoch;
 
         public:
-            static constexpr std::size_t ssz_size = 153;
+            static constexpr std::size_t ssz_size = 121;
             std::size_t get_ssz_size() const { return ssz_size; } 
             BytesVector serialize() const
             {
                 return serialize_({
+                        &pubkey, 
+                        &withdrawal_credentials,
+                        &effective_balance,
+                        &slashed,
+                        &activation_eligibility_epoch,
+                        &activation_epoch,
+                        &exit_epoch,
+                        &withdrawable_epoch}); 
+            }
+            bool deserialize(ssz::SSZIterator it, ssz::SSZIterator end)
+            {
+                return deserialize_(it, end, {
                         &pubkey, 
                         &withdrawal_credentials,
                         &effective_balance,

@@ -39,8 +39,20 @@ namespace eth
             operator bool() const {return value_;};
             operator bool&() {return value_; }
             operator Bytes<1>() const {return char(value_); }
-            virtual std::vector<std::byte> serialize() const {return Bytes<1>(value_).serialize();}
+            std::vector<std::byte> serialize() const {return Bytes<1>(value_).serialize();}
+            bool deserialize(ssz::SSZIterator it, ssz::SSZIterator end)
+            {
+                if (std::distance(it,end) != 1)
+                    return false;
+                auto muint = helpers::to_integer_little_endian<std::uint8_t>(&*it);
+                if (muint > 1)
+                    return false;
+                value_ = bool(muint);
+                return true;
+            }
 
+            bool operator==(const Boolean&) const = default;
+            
             static constexpr std::size_t ssz_size = 1;
             std::size_t get_ssz_size() const { return ssz_size; }
 

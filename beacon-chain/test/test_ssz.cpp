@@ -64,12 +64,17 @@ void test_ssz(const std::string &path)
                    throw std::filesystem::filesystem_error("could not uncompress file", p2.path(), 
                            std::error_code());
 
+               T obj;
+
+               obj.deserialize(output.begin(), output.end());
+
+               TEST_CHECK(obj == ssz_type);
+               TEST_MSG("Processing file: %s", ssz_snappy_path.c_str());
+               TEST_DUMP("Expected:", output.data(), serialized.size());
+               TEST_DUMP("Produced:", serialized.data(), serialized.size());
+
                TEST_CHECK(serialized == output);
                TEST_MSG("Processing file: %s", ssz_snappy_path.c_str());
-               std::size_t i = 0;
-               while(serialized[i] == output[i])
-                  i++;
-               TEST_MSG("First byte difference in position %x", i);
                TEST_DUMP("Expected:", output.data(), serialized.size());
                TEST_DUMP("Produced:", serialized.data(), serialized.size());
 

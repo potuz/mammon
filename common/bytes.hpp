@@ -106,6 +106,14 @@ namespace eth
                 return ret;
             }
 
+            bool deserialize(ssz::SSZIterator it, ssz::SSZIterator end)
+            {
+                if (std::distance(it, end) != N)
+                    return false;
+                std::copy(it,end,m_arr.begin());
+                return true;
+            }
+
             operator std::vector<std::byte>()
             {
                 std::vector<std::byte> ret(m_arr.begin(),m_arr.end());

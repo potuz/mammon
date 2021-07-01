@@ -25,6 +25,7 @@
 #include "ssz/ssz_container.hpp"
 #include <cstdint>
 #include "yaml-cpp/yaml.h"
+#include"helpers/bytes_to_int.hpp"
 
 
 namespace eth
@@ -41,8 +42,16 @@ namespace eth
             operator std::uint64_t() const {return value_;};
             operator std::uint64_t&() {return value_; }
             operator Bytes8() const {return value_; }
-            virtual std::vector<std::byte> serialize() const {return Bytes8(value_).serialize();}
+            std::vector<std::byte> serialize() const {return Bytes8(value_).serialize();}
+            bool deserialize(ssz::SSZIterator it, ssz::SSZIterator end)
+            {
+                if (std::distance(it, end) != sizeof(value_))
+                    return false;
+                value_ = helpers::to_integer_little_endian<std::uint64_t>(&*it);
+                return true;
+            }
 
+            bool operator==(const Slot&) const = default;
             static constexpr std::size_t ssz_size = 8;
             std::size_t get_ssz_size() const { return ssz_size; }
 

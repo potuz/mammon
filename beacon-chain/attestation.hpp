@@ -38,6 +38,10 @@ namespace eth
         static constexpr std::size_t ssz_size = 128;
         std::size_t get_ssz_size() const { return ssz_size; } 
         BytesVector serialize() const { return serialize_({&slot, &index, &beacon_block_root, &source, &target}); }
+        bool deserialize(ssz::SSZIterator it, ssz::SSZIterator end)
+        {
+            return deserialize_(it, end, {&slot, &index, &beacon_block_root, &source, &target}); 
+        }
 
         YAML::Node encode() const
         { 
@@ -68,6 +72,10 @@ namespace eth
         BLSSignature signature;
 
         BytesVector serialize() const { return serialize_({&attesting_indices, &data, &signature}); }
+        bool deserialize(ssz::SSZIterator it, ssz::SSZIterator end)
+        {
+            return deserialize_(it, end, {&attesting_indices, &data, &signature});
+        }
 
         YAML::Node encode() const
         { 
@@ -97,6 +105,10 @@ namespace eth
         BytesVector serialize() const
         {
             return serialize_({&aggregation_bits, &data, &inclusion_delay, &proposer_index});
+        }
+        bool deserialize(ssz::SSZIterator it, ssz::SSZIterator end)
+        {
+            return deserialize_(it, end, {&aggregation_bits, &data, &inclusion_delay, &proposer_index});
         }
 
         YAML::Node encode() const
@@ -128,6 +140,10 @@ namespace eth
         BytesVector serialize() const
         {
             return serialize_({&aggregation_bits, &data, &signature});
+        }
+        bool deserialize(ssz::SSZIterator it, ssz::SSZIterator end)
+        {
+            return deserialize_(it, end, {&aggregation_bits, &data, &signature});
         }
         YAML::Node encode() const
         { 

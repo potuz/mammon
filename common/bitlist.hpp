@@ -30,6 +30,7 @@ namespace eth
     class Bitlist : public ssz::Container
     {
         private:
+            
             std::vector<bool> m_arr;
 
         public:
@@ -48,6 +49,8 @@ namespace eth
             std::size_t size() const { return m_arr.size(); }
 
             std::vector<std::byte> serialize() const;
+            bool deserialize(ssz::SSZIterator it, ssz::SSZIterator end);
+            bool operator==(const Bitlist&) const = default;
             YAML::Node encode() const;
             bool decode(const YAML::Node& node);
     };

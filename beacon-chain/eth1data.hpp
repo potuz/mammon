@@ -35,6 +35,10 @@ namespace eth
         static constexpr std::size_t ssz_size = 72;
         std::size_t get_ssz_size() const { return ssz_size; } 
         BytesVector serialize() const { return serialize_({&deposit_root, &deposit_count, &block_hash}); }
+        bool deserialize(ssz::SSZIterator it, ssz::SSZIterator end)
+        {
+            return deserialize_(it, end, {&deposit_root, &deposit_count, &block_hash}); 
+        }
         YAML::Node encode() const
         { 
             return encode_({

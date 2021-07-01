@@ -101,6 +101,18 @@ namespace eth
                 return ret;
             }
 
+            bool deserialize(ssz::SSZIterator it, ssz::SSZIterator end)
+            {
+                if (std::distance(it, end) != (N+7)/8)
+                    return false;
+                for (auto i = it; i != end; ++i)
+                    for (int j=0; j < 8 && 8*std::distance(it,i)+j < N; ++j)
+                        m_arr[8*std::distance(it,i)+j] = std::to_integer<unsigned char>( *i & (std::byte(1) << j));
+                return true;
+            }
+
+            bool operator==(const Bitvector&) const = default;
+
             YAML::Node encode() const
             {
                 auto str = this->to_string();

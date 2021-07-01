@@ -36,38 +36,42 @@ namespace eth
         ret.back() |= std::byte(1 << (m_arr.size() % 8));
         return ret;
     }
+    bool Bitlist::deserialize(ssz::SSZIterator it, ssz::SSZIterator end)
+    {
+        auto last = end;
+        --last;
+
+        int msb = std::countl_zero(static_cast<unsigned char>(*last));
+        m_arr.clear();
+
+        for (auto i = it; i != last; ++i)
+           for (int j = 0; j < 8; ++j)
+                m_arr.push_back( std::to_integer<unsigned char>((*i  >> j ) & std::byte(1)));
+
+        for (int i = 0; i < 7-msb; ++i)
+           m_arr.push_back(std::to_integer<unsigned char>((*last >> i) & std::byte(1)) );
+        return true;
+    }
 
     //Does not check for errors, assumes strings is 0x valid hex bytes! In particular even # of chars
     void Bitlist::from_hexstring(std::string str)
     {
-       if (!str.starts_with("0x"))
+        if (!str.starts_with("0x"))
            throw std::invalid_argument("string not prepended with 0x");
-       str.erase(0,2);
+        str.erase(0,2);
 
-       //The most significant bit is the length of the bitlist and it's not to be counted
-       std::stringstream ss;
-       unsigned int buffer;
-       std::vector<unsigned char> hex;
-       for (int offset = 0; offset < str.length(); offset += 2)
-       {
+        //The most significant bit is the length of the bitlist and it's not to be counted
+        std::stringstream ss;
+        unsigned int buffer;
+        std::vector<std::byte> hex;
+        for (int offset = 0; offset < str.length(); offset += 2)
+        {
            ss.clear();
            ss << std::hex << str.substr(offset,2);
            ss >> buffer;
-           hex.push_back(static_cast<unsigned char>(buffer));
-       }
-
-       int msb = std::countl_zero(hex.back());
-
-       std::vector<bool> ret(hex.size()*8 - msb -1);
-       
-       m_arr.clear();
-
-       for (int i = 0; i < hex.size()-1; ++i)
-           for (int j = 0; j < 8; ++j)
-                m_arr.push_back ( (hex[i]  >> j) & 1 );
-
-       for (int i = 0; i < 7-msb; ++i)
-           m_arr.push_back( (hex.back() >> i) & 1 );
+           hex.push_back(static_cast<std::byte>(buffer));
+        }
+        deserialize(hex.begin(), hex.end());
     }
 
     std::string Bitlist::to_string() const

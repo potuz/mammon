@@ -30,11 +30,13 @@ namespace ssz
     class Container;
     using Part = std::pair<std::string, Container*>;
     using ConstPart = std::pair<std::string, const Container*>;
+    using SSZIterator = std::vector<std::byte>::iterator;
 
     class Container
     {
         protected:
             static std::vector<std::byte> serialize_(std::vector<const Container*>);
+            static bool deserialize_(SSZIterator it, SSZIterator end, std::vector<Container*>);
             static YAML::Node encode_(std::vector<ConstPart> parts);
             static bool decode_(const YAML::Node& node, std::vector<Part> parts);
 
@@ -44,9 +46,14 @@ namespace ssz
 
             virtual std::size_t get_ssz_size() const { return 0; }
             virtual std::vector<std::byte> serialize() const = 0;
+            virtual bool deserialize(SSZIterator it, SSZIterator end) = 0;
 
             virtual YAML::Node encode() const = 0;
             virtual bool decode(const YAML::Node& node) = 0; 
+            bool operator==(const Container&) const
+            {
+                return true;
+            }
     };
 
 }

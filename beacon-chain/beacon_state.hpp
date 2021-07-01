@@ -182,6 +182,33 @@ namespace eth
                         &current_justified_checkpoint_,
                         &finalized_checkpoint_});
             }
+            bool deserialize(ssz::SSZIterator it, ssz::SSZIterator end)
+            {
+                return deserialize_(it, end, {
+                        &genesis_time_,
+                        &genesis_validators_root_,
+                        &slot_,
+                        &fork_,
+                        &latest_block_header_,
+                        &block_roots_,
+                        &state_roots_,
+                        &historical_roots_,
+                        &eth1_data_,
+                        &eth1_data_votes_,
+                        &eth1_deposit_index_,
+                        &validators_,
+                        &balances_,
+                        &randao_mixes_,
+                        &slashings_,
+                        &previous_epoch_attestations_,
+                        &current_epoch_attestations_,
+                        &justification_bits_,
+                        &previous_justified_checkpoint_,
+                        &current_justified_checkpoint_,
+                        &finalized_checkpoint_});
+            }
+
+            bool operator==(const BeaconState&) const = default;
 
             YAML::Node encode() const
             { 

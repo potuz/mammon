@@ -28,7 +28,7 @@
 namespace eth
 
 {
-    template<class T, std::size_t N> 
+    template<class T, std::size_t N>
     class VectorFixedSizedParts : public ssz::Container
     {
         private:
@@ -73,6 +73,18 @@ namespace eth
                 }
                 return ret;
             }
+
+            bool deserialize(ssz::SSZIterator it, ssz::SSZIterator end)
+            {
+                if ( std::distance(it, end) != ssz_size )
+                    return false;
+
+                for (int i = 0; i < N; ++i)
+                    if (! m_arr[i].deserialize(it + i*T::ssz_size, it + (i+1)*T::ssz_size))
+                        return false;
+                return true;
+            }
+
             YAML::Node encode() const 
             {
                 return YAML::convert<std::array<T,N>>::encode(m_arr);
@@ -125,6 +137,23 @@ namespace eth
                 }
                 return ret;
             }
+
+            bool deserialize(ssz::SSZIterator it, ssz::SSZIterator end)
+            {
+                m_arr.clear();
+                if ( std::distance(it, end) % T::ssz_size )
+                    return false;
+
+                for (auto i = it; i != end; i+= T::ssz_size)
+                {
+                    T obj;
+                    if (! obj.deserialize(i, i + T::ssz_size))
+                        return false;
+                    m_arr.push_back(obj);
+                }
+                return true;
+            }
+
             YAML::Node encode() const 
             {
                 return YAML::convert<std::vector<T>>::encode(m_arr);
@@ -135,7 +164,7 @@ namespace eth
             }
     };
 
-    template<class T> 
+    template<class T>
     class ListVariableSizedParts : public ssz::Container
     {
         private:
@@ -184,6 +213,46 @@ namespace eth
                     ret.insert(ret.begin(), offsets.begin(), offsets.end());
                 return ret;
             }
+            bool deserialize(ssz::SSZIterator it, ssz::SSZIterator end)
+            {
+                m_arr.clear();
+                if (it==end)        // empty list
+                    return true;
+                if (std::distance(it,end) < constants::BYTES_PER_LENGTH_OFFSET)
+                    return false;
+                auto begin=it;
+                auto first_offset = helpers::to_integer_little_endian<std::uint32_t>(&*it);
+                if (first_offset < constants::BYTES_PER_LENGTH_OFFSET)
+                    return false;
+                if (std::distance(begin,end) < first_offset)
+                    return false;
+                auto last_offset = first_offset;
+                it += constants::BYTES_PER_LENGTH_OFFSET;
+
+                while( it!= begin+first_offset)
+                {
+                    if (std::distance(begin,it) + constants::BYTES_PER_LENGTH_OFFSET > first_offset)
+                        return false;
+
+                    auto current_offset = helpers::to_integer_little_endian<std::uint32_t>(&*it);
+                    if (current_offset < last_offset)
+                        return false;
+                    if (std::distance(begin,end) < current_offset)
+                        return false;
+                    T obj;
+                    if (!obj.deserialize(begin + last_offset, begin+current_offset))
+                        return false;
+                    m_arr.push_back(obj);
+                    last_offset = current_offset;
+                    it += constants::BYTES_PER_LENGTH_OFFSET;
+                }
+                T obj;
+                if (!obj.deserialize(begin + last_offset, end))
+                    return false;
+                m_arr.push_back(obj);
+                return true;
+            }
+
             YAML::Node encode() const 
             {
                 return YAML::convert<std::vector<T>>::encode(m_arr);
@@ -205,6 +274,13 @@ namespace eth
         {
             return serialize_({&previous_version, &current_version, &epoch});
         }
+
+        bool deserialize(ssz::SSZIterator it, ssz::SSZIterator end)
+        {
+            return deserialize_(it, end, {&previous_version, &current_version, &epoch});
+        }
+
+        bool operator==(const Fork&) const = default;
 
         YAML::Node encode() const
         { 
@@ -236,6 +312,11 @@ namespace eth
             return serialize_({&current_version, &genesis_validators_root});
         }
 
+        bool deserialize(ssz::SSZIterator it, ssz::SSZIterator end)
+        {
+            return deserialize_(it, end, {&current_version, &genesis_validators_root});
+        }
+        
         YAML::Node encode() const
         { 
             return encode_({
@@ -260,6 +341,10 @@ namespace eth
         static constexpr std::size_t ssz_size = 40;
         std::size_t get_ssz_size() const { return ssz_size; } 
         BytesVector serialize() const { return serialize_({&epoch, &root}); }
+        bool deserialize(ssz::SSZIterator it, ssz::SSZIterator end)
+        {
+            return deserialize_(it, end, {&epoch, &root});
+        }
 
         YAML::Node encode() const
         { 
@@ -285,6 +370,10 @@ namespace eth
         static constexpr std::size_t ssz_size = 64;
         std::size_t get_ssz_size() const { return ssz_size; } 
         BytesVector serialize() const { return serialize_({&object_root, &domain}); }
+        bool deserialize(ssz::SSZIterator it, ssz::SSZIterator end)
+        {
+            return deserialize_(it, end, {&object_root, &domain}); 
+        }
 
         YAML::Node encode() const
         { 

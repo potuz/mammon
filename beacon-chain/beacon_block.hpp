@@ -45,6 +45,13 @@ namespace eth
         { 
             return serialize_( {&slot, &proposer_index, &parent_root, &state_root, &body_root}); 
         }
+        bool deserialize(ssz::SSZIterator it, ssz::SSZIterator end)
+        {
+            return deserialize_(it, end, {&slot, &proposer_index, &parent_root, &state_root, &body_root});
+        }
+
+        bool operator==(const BeaconBlockHeader&) const = default;
+        
         YAML::Node encode() const
         { 
             return encode_({
@@ -75,6 +82,12 @@ namespace eth
         std::size_t get_ssz_size() const { return ssz_size; } 
 
         BytesVector serialize() const { return serialize_({&epoch, &validator_index}); }
+        bool deserialize(ssz::SSZIterator it, ssz::SSZIterator end)
+        {
+            return deserialize_(it, end, {&epoch, &validator_index}); 
+        }
+        bool operator==(const VoluntaryExit&) const = default;
+
         YAML::Node encode() const
         { 
             return encode_({
@@ -98,6 +111,12 @@ namespace eth
         static constexpr std::size_t ssz_size = 112;
         std::size_t get_ssz_size() const { return ssz_size; } 
         BytesVector serialize() const { return serialize_({&message, &signature}); }
+        bool deserialize(ssz::SSZIterator it, ssz::SSZIterator end)
+        {
+            return deserialize_(it, end, {&message, &signature}); 
+        }
+        bool operator==(const SignedVoluntaryExit&) const = default;
+        
         YAML::Node encode() const
         { 
             return encode_({
@@ -185,6 +204,19 @@ namespace eth
                          &deposits_,
                          &voluntary_exits_ });
             }
+
+            bool deserialize(ssz::SSZIterator it, ssz::SSZIterator end)
+            {
+                return deserialize_(it, end,{
+                         &randao_reveal_,
+                         &eth1_data_,
+                         &graffiti_,
+                         &proposer_slashings_,
+                         &attester_slashings_,
+                         &attestations_,
+                         &deposits_,
+                         &voluntary_exits_ });
+            }
                         
             YAML::Node encode() const
             { 
@@ -239,6 +271,11 @@ namespace eth
                 return serialize_( { &slot_, &proposer_index_, &parent_root_, &state_root_, &body_ });
             }
 
+            bool deserialize(ssz::SSZIterator it, ssz::SSZIterator end)
+            {
+                return deserialize_(it, end, { &slot_, &proposer_index_, &parent_root_, &state_root_, &body_ });
+            }
+
             YAML::Node encode() const
             { 
                 return encode_({
@@ -268,6 +305,11 @@ namespace eth
         static constexpr std::size_t ssz_size = 208;
         std::size_t get_ssz_size() const { return ssz_size; } 
         BytesVector serialize() const { return serialize_({ &message, &signature }); }
+        bool deserialize(ssz::SSZIterator it, ssz::SSZIterator end)
+        {
+            return deserialize_(it, end, { &message, &signature }); 
+        }
+
         YAML::Node encode() const
         { 
             return encode_({
@@ -290,6 +332,11 @@ namespace eth
         static constexpr std::size_t ssz_size = 416;
         std::size_t get_ssz_size() const { return ssz_size; } 
         BytesVector serialize() const { return serialize_({ &signed_header_1, &signed_header_2 }); }
+        bool deserialize(ssz::SSZIterator it, ssz::SSZIterator end)
+        {
+            return deserialize_(it, end, { &signed_header_1, &signed_header_2 }); 
+        }
+
         YAML::Node encode() const
         { 
             return encode_({
@@ -309,6 +356,10 @@ namespace eth
         IndexedAttestation attestation_1, attestation_2;
 
         BytesVector serialize() const { return serialize_({ &attestation_1, &attestation_2 }); }
+        bool deserialize(ssz::SSZIterator it, ssz::SSZIterator end)
+        {
+            return deserialize_(it, end, { &attestation_1, &attestation_2 }); 
+        }
         YAML::Node encode() const
         { 
             return encode_({
@@ -330,6 +381,11 @@ namespace eth
         BLSSignature    signature;
 
         BytesVector serialize() const { return serialize_({ &message, &signature }); }
+        bool deserialize(ssz::SSZIterator it, ssz::SSZIterator end)
+        {
+            return deserialize_(it, end, { &message, &signature }); 
+        }
+
         YAML::Node encode() const
         { 
             return encode_({

@@ -37,6 +37,10 @@ namespace eth
         static constexpr std::size_t ssz_size = 88;
         std::size_t get_ssz_size() const { return ssz_size; } 
         BytesVector serialize() const { return serialize_({&pubkey, &withdrawal_credentials, &amount}); }
+        bool deserialize(ssz::SSZIterator it, ssz::SSZIterator end)
+        {
+            return deserialize_(it, end, {&pubkey, &withdrawal_credentials, &amount});
+        }
         YAML::Node encode() const
         { 
             return encode_({
@@ -64,6 +68,10 @@ namespace eth
         static constexpr std::size_t ssz_size = 184;
         std::size_t get_ssz_size() const { return ssz_size; } 
         BytesVector serialize() const { return serialize_({&pubkey, &withdrawal_credentials, &amount, &signature}); }
+        bool deserialize(ssz::SSZIterator it, ssz::SSZIterator end)
+        {
+            return deserialize_(it, end, {&pubkey, &withdrawal_credentials, &amount, &signature}); 
+        }
         YAML::Node encode() const
         { 
             return encode_({
@@ -91,6 +99,10 @@ namespace eth
         static constexpr std::size_t ssz_size = 32*constants::DEPOSIT_CONTRACT_TREE_DEPTH + 216;
         std::size_t get_ssz_size() const { return ssz_size; } 
         BytesVector serialize() const { return serialize_({&proof, &data}); }
+        bool deserialize(ssz::SSZIterator it, ssz::SSZIterator end)
+        {
+            return deserialize_(it, end, {&proof, &data}); 
+        }
 
         YAML::Node encode() const
         { 
