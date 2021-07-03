@@ -170,14 +170,14 @@ namespace eth
             }
 
             template<std::size_t M>
-            constexpr bool operator==(Bytes<M> const &r)
+            constexpr bool operator==(Bytes<M> const &r) const
             {
                 if ( N!=M )
                     return false;
                 return m_arr == r.to_array();
             }
 
-            constexpr bool operator==(std::vector<std::byte> const &r)
+            constexpr bool operator==(std::vector<std::byte> const &r) const
             {
                 if (N!=r.size())
                     return false;
