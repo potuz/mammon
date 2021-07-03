@@ -25,10 +25,10 @@ endif()
 option(MINIMAL "Enable minimal network config")
 if(MINIMAL)
 	message(STATUS "Running minimal config")
-	configure_file(config/minimal.hpp "${CMAKE_SOURCE_DIR}/include/config.hpp" COPYONLY)
+	configure_file(config/minimal.hpp.in "${CMAKE_SOURCE_DIR}/include/config.hpp")
 else()
 	message(STATUS "Running mainnet config")
-	configure_file(config/mainnet.hpp include/config.hpp COPYONLY)
+	configure_file(config/mainnet.hpp.in include/config.hpp)
 endif()
 
 add_executable (beacon-chain
