@@ -1,0 +1,25 @@
+name: Static analysis
+
+on: [pull_request]
+
+jobs:
+  static_analysis:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: setup init_script
+      shell: bash
+      run: |
+        echo "#!/bin/bash
+        add-apt-repository ppa:oibaf/graphics-drivers
+        apt update
+        apt upgrade
+        apt install -y libvulkan1 mesa-vulkan-drivers vulkan-utils" > init_script.sh
+
+    - name: Run static analysis
+      uses: JacobDomagala/StaticAnalysis@master
+      with:
+        # Additional apt packages that need to be installed before running Cmake
+        apt_pckgs: yaml-cpp
