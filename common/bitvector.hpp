@@ -22,6 +22,7 @@
 
 #pragma once
 #include "common/bytes.hpp"
+#include "ssz/ssz.hpp"
 #include "ssz/ssz_container.hpp"
 #include "yaml-cpp/yaml.h"
 #include <array>
@@ -35,8 +36,9 @@ private:
   std::array<bool, N> m_arr;
 
 public:
-  static constexpr std::size_t ssz_size = (N + 7) / 8;
-  std::size_t get_ssz_size() const { return ssz_size; }
+  static constexpr std::size_t ssz_size =
+      (N + constants::BITS_PER_BYTE - 1) / constants::BITS_PER_BYTE;
+  std::size_t get_ssz_size() const override { return ssz_size; }
 
   Bitvector(std::array<bool, N> vec) : m_arr{vec} {};
   template <typename... T>
@@ -51,7 +53,7 @@ public:
       throw std::invalid_argument("hexstring larger than bitvector length");
 
     std::stringstream ss;
-    unsigned int buffer;
+    unsigned int buffer = 0;
     std::vector<unsigned char> hex;
     for (int offset = 0; offset < str.length(); offset += 2) {
       ss.clear();
@@ -62,8 +64,10 @@ public:
 
     m_arr.fill(0);
     for (int i = 0; i < hex.size(); ++i)
-      for (int j = 0; j < 8 && 8 * i + j < N; ++j)
-        m_arr[8 * i + j] = ((hex[i] >> j) & 1);
+      for (int j = 0;
+           j < constants::BITS_PER_BYTE && constants::BITS_PER_BYTE * i + j < N;
+           ++j)
+        m_arr[constants::BITS_PER_BYTE * i + j] = ((hex[i] >> j) & 1);
   }
 
   std::string to_string() const {
@@ -85,31 +89,35 @@ public:
     return os;
   };
 
-  std::vector<std::byte> serialize() const {
-    Bytes<(N + 7) / 8> ret{};
+  std::vector<std::byte> serialize() const override {
+    Bytes<(N + constants::BITS_PER_BYTE - 1) / constants::BITS_PER_BYTE> ret{};
     for (int i = 0; i < N; ++i)
-      ret[i / 8] |= (std::byte(m_arr[i] << (i % 8)));
+      ret[i / constants::BITS_PER_BYTE] |=
+          (std::byte(m_arr[i] << (i % constants::BITS_PER_BYTE)));
     return ret;
   }
 
-  bool deserialize(ssz::SSZIterator it, ssz::SSZIterator end) {
-    if (std::distance(it, end) != (N + 7) / 8)
+  bool deserialize(ssz::SSZIterator it, ssz::SSZIterator end) override {
+    if (std::distance(it, end) !=
+        (N + constants::BITS_PER_BYTE - 1) / constants::BITS_PER_BYTE)
       return false;
     for (auto i = it; i != end; ++i)
-      for (int j = 0; j < 8 && 8 * std::distance(it, i) + j < N; ++j)
-        m_arr[8 * std::distance(it, i) + j] =
+      for (int j = 0; j < constants::BITS_PER_BYTE &&
+                      constants::BITS_PER_BYTE * std::distance(it, i) + j < N;
+           ++j)
+        m_arr[constants::BITS_PER_BYTE * std::distance(it, i) + j] =
             std::to_integer<unsigned char>(*i & (std::byte(1) << j));
     return true;
   }
 
   bool operator==(const Bitvector &) const = default;
 
-  YAML::Node encode() const {
+  YAML::Node encode() const override {
     auto str = this->to_string();
     return YAML::convert<std::string>::encode(str);
   }
 
-  bool decode(const YAML::Node &node) {
+  bool decode(const YAML::Node &node) override {
     std::string str;
     if (!YAML::convert<std::string>::decode(node, str))
       return false;

@@ -36,20 +36,20 @@ private:
 
 public:
   static constexpr std::size_t ssz_size = 121;
-  std::size_t get_ssz_size() const { return ssz_size; }
-  BytesVector serialize() const {
+  std::size_t get_ssz_size() const override { return ssz_size; }
+  BytesVector serialize() const override {
     return serialize_({&pubkey, &withdrawal_credentials, &effective_balance,
                        &slashed, &activation_eligibility_epoch,
                        &activation_epoch, &exit_epoch, &withdrawable_epoch});
   }
-  bool deserialize(ssz::SSZIterator it, ssz::SSZIterator end) {
+  bool deserialize(ssz::SSZIterator it, ssz::SSZIterator end) override {
     return deserialize_(it, end,
                         {&pubkey, &withdrawal_credentials, &effective_balance,
                          &slashed, &activation_eligibility_epoch,
                          &activation_epoch, &exit_epoch, &withdrawable_epoch});
   }
 
-  YAML::Node encode() const {
+  YAML::Node encode() const override {
     return encode_(
         {{"pubkey", &pubkey},
          {"withdrawal_credentials", &withdrawal_credentials},
@@ -61,7 +61,7 @@ public:
          {"withdrawable_epoch", &withdrawable_epoch}});
   }
 
-  bool decode(const YAML::Node &node) {
+  bool decode(const YAML::Node &node) override {
     return decode_(
         node, {{"pubkey", &pubkey},
                {"withdrawal_credentials", &withdrawal_credentials},

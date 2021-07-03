@@ -118,7 +118,7 @@ public:
               void finalized_checkpoint(Checkpoint);
               */
 
-  BytesVector serialize() const {
+  BytesVector serialize() const override {
     return serialize_({&genesis_time_,
                        &genesis_validators_root_,
                        &slot_,
@@ -141,7 +141,7 @@ public:
                        &current_justified_checkpoint_,
                        &finalized_checkpoint_});
   }
-  bool deserialize(ssz::SSZIterator it, ssz::SSZIterator end) {
+  bool deserialize(ssz::SSZIterator it, ssz::SSZIterator end) override {
     return deserialize_(it, end,
                         {&genesis_time_,
                          &genesis_validators_root_,
@@ -168,7 +168,7 @@ public:
 
   bool operator==(const BeaconState &) const = default;
 
-  YAML::Node encode() const {
+  YAML::Node encode() const override {
     return encode_(
         {{"genesis_time", &genesis_time_},
          {"genesis_validators_root", &genesis_validators_root_},
@@ -193,7 +193,7 @@ public:
          {"finalized_checkpoint", &finalized_checkpoint_}});
   }
 
-  bool decode(const YAML::Node &node) {
+  bool decode(const YAML::Node &node) override {
     return decode_(
         node,
         {{"genesis_time", &genesis_time_},

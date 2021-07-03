@@ -44,10 +44,10 @@ public:
   std::string to_string() const;
   std::size_t size() const { return m_arr.size(); }
 
-  std::vector<std::byte> serialize() const;
-  bool deserialize(ssz::SSZIterator it, ssz::SSZIterator end);
+  std::vector<std::byte> serialize() const override;
+  bool deserialize(ssz::SSZIterator it, ssz::SSZIterator end) override;
   bool operator==(const Bitlist &) const = default;
-  YAML::Node encode() const;
-  bool decode(const YAML::Node &node);
+  YAML::Node encode() const override;
+  bool decode(const YAML::Node &node) override;
 };
 } // namespace eth

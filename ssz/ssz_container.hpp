@@ -31,16 +31,18 @@ using Part = std::pair<std::string, Container *>;
 using ConstPart = std::pair<std::string, const Container *>;
 using SSZIterator = std::vector<std::byte>::iterator;
 
+// NOLINTNEXTLINE(cppcoreguidelines-special-member-functions)
 class Container {
 protected:
-  static std::vector<std::byte> serialize_(std::vector<const Container *>);
+  static std::vector<std::byte>
+  serialize_(const std::vector<const Container *> &);
   static bool deserialize_(SSZIterator it, SSZIterator end,
-                           std::vector<Container *>);
+                           const std::vector<Container *> &);
   static YAML::Node encode_(const std::vector<ConstPart> &parts);
   static bool decode_(const YAML::Node &node, std::vector<Part> parts);
 
 public:
-  virtual ~Container() = default;
+  virtual ~Container() = default; // NOLINT
 
   virtual std::size_t get_ssz_size() const { return 0; }
   virtual std::vector<std::byte> serialize() const = 0;

@@ -31,20 +31,20 @@ struct Eth1Data : public ssz::Container {
   Hash32 block_hash;
 
   static constexpr std::size_t ssz_size = 72;
-  std::size_t get_ssz_size() const { return ssz_size; }
-  BytesVector serialize() const {
+  std::size_t get_ssz_size() const override { return ssz_size; }
+  BytesVector serialize() const override {
     return serialize_({&deposit_root, &deposit_count, &block_hash});
   }
-  bool deserialize(ssz::SSZIterator it, ssz::SSZIterator end) {
+  bool deserialize(ssz::SSZIterator it, ssz::SSZIterator end) override {
     return deserialize_(it, end, {&deposit_root, &deposit_count, &block_hash});
   }
-  YAML::Node encode() const {
+  YAML::Node encode() const override {
     return encode_({{"deposit_root", &deposit_root},
                     {"deposit_count", &deposit_count},
                     {"block_hash", &block_hash}});
   }
 
-  bool decode(const YAML::Node &node) {
+  bool decode(const YAML::Node &node) override {
     return decode_(node, {{"deposit_root", &deposit_root},
                           {"deposit_count", &deposit_count},
                           {"block_hash", &block_hash}});

@@ -23,9 +23,9 @@
 
 #include "attestation.hpp"
 #include "common/basic_types.hpp"
-#include "config.hpp"
 #include "deposits.hpp"
 #include "eth1data.hpp"
+#include "include/config.hpp"
 #include "ssz/ssz.hpp"
 #include "ssz/ssz_container.hpp"
 #include "yaml-cpp/yaml.h"
@@ -38,12 +38,12 @@ struct BeaconBlockHeader : public ssz::Container {
   Root parent_root, state_root, body_root;
 
   static constexpr std::size_t ssz_size = 112;
-  std::size_t get_ssz_size() const { return ssz_size; }
-  BytesVector serialize() const {
+  std::size_t get_ssz_size() const override { return ssz_size; }
+  BytesVector serialize() const override {
     return serialize_(
         {&slot, &proposer_index, &parent_root, &state_root, &body_root});
   }
-  bool deserialize(ssz::SSZIterator it, ssz::SSZIterator end) {
+  bool deserialize(ssz::SSZIterator it, ssz::SSZIterator end) override {
     return deserialize_(
         it, end,
         {&slot, &proposer_index, &parent_root, &state_root, &body_root});
@@ -51,7 +51,7 @@ struct BeaconBlockHeader : public ssz::Container {
 
   bool operator==(const BeaconBlockHeader &) const = default;
 
-  YAML::Node encode() const {
+  YAML::Node encode() const override {
     return encode_({{"slot", &slot},
                     {"proposer_index", &proposer_index},
                     {"parent_root", &parent_root},
@@ -59,7 +59,7 @@ struct BeaconBlockHeader : public ssz::Container {
                     {"body_root", &body_root}});
   }
 
-  bool decode(const YAML::Node &node) {
+  bool decode(const YAML::Node &node) override {
     return decode_(node, {{"slot", &slot},
                           {"proposer_index", &proposer_index},
                           {"parent_root", &parent_root},
@@ -73,21 +73,21 @@ struct VoluntaryExit : public ssz::Container {
   ValidatorIndex validator_index;
 
   static constexpr std::size_t ssz_size = 16;
-  std::size_t get_ssz_size() const { return ssz_size; }
+  std::size_t get_ssz_size() const override { return ssz_size; }
 
-  BytesVector serialize() const {
+  BytesVector serialize() const override {
     return serialize_({&epoch, &validator_index});
   }
-  bool deserialize(ssz::SSZIterator it, ssz::SSZIterator end) {
+  bool deserialize(ssz::SSZIterator it, ssz::SSZIterator end) override {
     return deserialize_(it, end, {&epoch, &validator_index});
   }
   bool operator==(const VoluntaryExit &) const = default;
 
-  YAML::Node encode() const {
+  YAML::Node encode() const override {
     return encode_({{"epoch", &epoch}, {"validator_index", &validator_index}});
   }
 
-  bool decode(const YAML::Node &node) {
+  bool decode(const YAML::Node &node) override {
     return decode_(node,
                    {{"epoch", &epoch}, {"validator_index", &validator_index}});
   }
@@ -98,18 +98,20 @@ struct SignedVoluntaryExit : public ssz::Container {
   BLSSignature signature;
 
   static constexpr std::size_t ssz_size = 112;
-  std::size_t get_ssz_size() const { return ssz_size; }
-  BytesVector serialize() const { return serialize_({&message, &signature}); }
-  bool deserialize(ssz::SSZIterator it, ssz::SSZIterator end) {
+  std::size_t get_ssz_size() const override { return ssz_size; }
+  BytesVector serialize() const override {
+    return serialize_({&message, &signature});
+  }
+  bool deserialize(ssz::SSZIterator it, ssz::SSZIterator end) override {
     return deserialize_(it, end, {&message, &signature});
   }
   bool operator==(const SignedVoluntaryExit &) const = default;
 
-  YAML::Node encode() const {
+  YAML::Node encode() const override {
     return encode_({{"message", &message}, {"signature", &signature}});
   }
 
-  bool decode(const YAML::Node &node) {
+  bool decode(const YAML::Node &node) override {
     return decode_(node, {{"message", &message}, {"signature", &signature}});
   }
 };
@@ -152,29 +154,29 @@ public:
     return voluntary_exits_;
   }
 
-  void randao_reveal(BLSSignature s);
-  void eth1_data(Eth1Data);
-  void graffiti(Bytes32);
-  void proposer_slashings(ListFixedSizedParts<ProposerSlashing>);
-  void attester_slashings(ListVariableSizedParts<AttesterSlashing>);
-  void attestations(ListVariableSizedParts<Attestation>);
-  void deposits(ListFixedSizedParts<Deposit>);
-  void voluntary_exits(ListFixedSizedParts<SignedVoluntaryExit>);
+  void randao_reveal(BLSSignature &&s);
+  void eth1_data(Eth1Data &&);
+  void graffiti(Bytes32 &&);
+  void proposer_slashings(ListFixedSizedParts<ProposerSlashing> &&);
+  void attester_slashings(ListVariableSizedParts<AttesterSlashing> &&);
+  void attestations(ListVariableSizedParts<Attestation> &&);
+  void deposits(ListFixedSizedParts<Deposit> &&);
+  void voluntary_exits(ListFixedSizedParts<SignedVoluntaryExit> &&);
 
-  BytesVector serialize() const {
+  BytesVector serialize() const override {
     return serialize_({&randao_reveal_, &eth1_data_, &graffiti_,
                        &proposer_slashings_, &attester_slashings_,
                        &attestations_, &deposits_, &voluntary_exits_});
   }
 
-  bool deserialize(ssz::SSZIterator it, ssz::SSZIterator end) {
+  bool deserialize(ssz::SSZIterator it, ssz::SSZIterator end) override {
     return deserialize_(it, end,
                         {&randao_reveal_, &eth1_data_, &graffiti_,
                          &proposer_slashings_, &attester_slashings_,
                          &attestations_, &deposits_, &voluntary_exits_});
   }
 
-  YAML::Node encode() const {
+  YAML::Node encode() const override {
     return encode_({{"randao_reveal", &randao_reveal_},
                     {"eth1_data", &eth1_data_},
                     {"graffiti", &graffiti_},
@@ -185,7 +187,7 @@ public:
                     {"voluntary_exits", &voluntary_exits_}});
   }
 
-  bool decode(const YAML::Node &node) {
+  bool decode(const YAML::Node &node) override {
     return decode_(node, {{"randao_reveal", &randao_reveal_},
                           {"eth1_data", &eth1_data_},
                           {"graffiti", &graffiti_},
@@ -209,24 +211,24 @@ public:
   const Root &parent_root() const { return parent_root_; }
   const Root &state_root() const { return state_root_; }
   const BeaconBlockBody &body() const { return body_; }
-  void slot(Slot);
-  void proposer_index(ValidatorIndex);
-  void parent_root(Root);
-  void state_root(Root);
-  void body(BeaconBlockBody);
+  void slot(Slot &&);
+  void proposer_index(ValidatorIndex &&);
+  void parent_root(Root &&);
+  void state_root(Root &&);
+  void body(BeaconBlockBody &&);
 
-  BytesVector serialize() const {
+  BytesVector serialize() const override {
     return serialize_(
         {&slot_, &proposer_index_, &parent_root_, &state_root_, &body_});
   }
 
-  bool deserialize(ssz::SSZIterator it, ssz::SSZIterator end) {
+  bool deserialize(ssz::SSZIterator it, ssz::SSZIterator end) override {
     return deserialize_(
         it, end,
         {&slot_, &proposer_index_, &parent_root_, &state_root_, &body_});
   }
 
-  YAML::Node encode() const {
+  YAML::Node encode() const override {
     return encode_({{"slot", &slot_},
                     {"proposer_index", &proposer_index_},
                     {"parent_root", &parent_root_},
@@ -234,7 +236,7 @@ public:
                     {"body", &body_}});
   }
 
-  bool decode(const YAML::Node &node) {
+  bool decode(const YAML::Node &node) override {
     return decode_(node, {{"slot", &slot_},
                           {"proposer_index", &proposer_index_},
                           {"parent_root", &parent_root_},
@@ -248,17 +250,19 @@ struct SignedBeaconBlockHeader : public ssz::Container {
   BLSSignature signature;
 
   static constexpr std::size_t ssz_size = 208;
-  std::size_t get_ssz_size() const { return ssz_size; }
-  BytesVector serialize() const { return serialize_({&message, &signature}); }
-  bool deserialize(ssz::SSZIterator it, ssz::SSZIterator end) {
+  std::size_t get_ssz_size() const override { return ssz_size; }
+  BytesVector serialize() const override {
+    return serialize_({&message, &signature});
+  }
+  bool deserialize(ssz::SSZIterator it, ssz::SSZIterator end) override {
     return deserialize_(it, end, {&message, &signature});
   }
 
-  YAML::Node encode() const {
+  YAML::Node encode() const override {
     return encode_({{"message", &message}, {"signature", &signature}});
   }
 
-  bool decode(const YAML::Node &node) {
+  bool decode(const YAML::Node &node) override {
     return decode_(node, {{"message", &message}, {"signature", &signature}});
   }
 };
@@ -267,19 +271,19 @@ struct ProposerSlashing : public ssz::Container {
   SignedBeaconBlockHeader signed_header_1, signed_header_2;
 
   static constexpr std::size_t ssz_size = 416;
-  std::size_t get_ssz_size() const { return ssz_size; }
-  BytesVector serialize() const {
+  std::size_t get_ssz_size() const override { return ssz_size; }
+  BytesVector serialize() const override {
     return serialize_({&signed_header_1, &signed_header_2});
   }
-  bool deserialize(ssz::SSZIterator it, ssz::SSZIterator end) {
+  bool deserialize(ssz::SSZIterator it, ssz::SSZIterator end) override {
     return deserialize_(it, end, {&signed_header_1, &signed_header_2});
   }
 
-  YAML::Node encode() const {
+  YAML::Node encode() const override {
     return encode_({{"signed_header_1", &signed_header_1},
                     {"signed_header_2", &signed_header_2}});
   }
-  bool decode(const YAML::Node &node) {
+  bool decode(const YAML::Node &node) override {
     return decode_(node, {{"signed_header_1", &signed_header_1},
                           {"signed_header_2", &signed_header_2}});
   }
@@ -288,18 +292,18 @@ struct ProposerSlashing : public ssz::Container {
 struct AttesterSlashing : public ssz::Container {
   IndexedAttestation attestation_1, attestation_2;
 
-  BytesVector serialize() const {
+  BytesVector serialize() const override {
     return serialize_({&attestation_1, &attestation_2});
   }
-  bool deserialize(ssz::SSZIterator it, ssz::SSZIterator end) {
+  bool deserialize(ssz::SSZIterator it, ssz::SSZIterator end) override {
     return deserialize_(it, end, {&attestation_1, &attestation_2});
   }
-  YAML::Node encode() const {
+  YAML::Node encode() const override {
     return encode_(
         {{"attestation_1", &attestation_1}, {"attestation_2", &attestation_2}});
   }
 
-  bool decode(const YAML::Node &node) {
+  bool decode(const YAML::Node &node) override {
     return decode_(node, {{"attestation_1", &attestation_1},
                           {"attestation_2", &attestation_2}});
   }
@@ -309,16 +313,18 @@ struct SignedBeaconBlock : public ssz::Container {
   BeaconBlock message;
   BLSSignature signature;
 
-  BytesVector serialize() const { return serialize_({&message, &signature}); }
-  bool deserialize(ssz::SSZIterator it, ssz::SSZIterator end) {
+  BytesVector serialize() const override {
+    return serialize_({&message, &signature});
+  }
+  bool deserialize(ssz::SSZIterator it, ssz::SSZIterator end) override {
     return deserialize_(it, end, {&message, &signature});
   }
 
-  YAML::Node encode() const {
+  YAML::Node encode() const override {
     return encode_({{"message", &message}, {"signature", &signature}});
   }
 
-  bool decode(const YAML::Node &node) {
+  bool decode(const YAML::Node &node) override {
     return decode_(node, {{"message", &message}, {"signature", &signature}});
   }
 };

@@ -20,6 +20,7 @@
  */
 
 #include "bitlist.hpp"
+#include "ssz/ssz.hpp"
 #include <bit>
 #include <cstddef>
 #include <iomanip>
@@ -28,10 +29,12 @@
 
 namespace eth {
 std::vector<std::byte> Bitlist::serialize() const {
-  std::vector<std::byte> ret(m_arr.size() / 8 + 1, std::byte(0));
+  std::vector<std::byte> ret(m_arr.size() / constants::BITS_PER_BYTE + 1,
+                             std::byte(0));
   for (int i = 0; i < m_arr.size(); ++i)
-    ret[i / 8] |= std::byte(static_cast<unsigned char>(m_arr[i] << (i % 8)));
-  ret.back() |= std::byte(1 << (m_arr.size() % 8));
+    ret[i / constants::BITS_PER_BYTE] |= std::byte(
+        static_cast<unsigned char>(m_arr[i] << (i % constants::BITS_PER_BYTE)));
+  ret.back() |= std::byte(1 << (m_arr.size() % constants::BITS_PER_BYTE));
   return ret;
 }
 bool Bitlist::deserialize(ssz::SSZIterator it, ssz::SSZIterator end) {
@@ -42,10 +45,10 @@ bool Bitlist::deserialize(ssz::SSZIterator it, ssz::SSZIterator end) {
   m_arr.clear();
 
   for (auto i = it; i != last; ++i)
-    for (int j = 0; j < 8; ++j)
+    for (int j = 0; j < constants::BITS_PER_BYTE; ++j)
       m_arr.push_back(std::to_integer<unsigned char>((*i >> j) & std::byte(1)));
 
-  for (int i = 0; i < 7 - msb; ++i)
+  for (int i = 0; i < constants::BITS_PER_BYTE - 1 - msb; ++i)
     m_arr.push_back(
         std::to_integer<unsigned char>((*last >> i) & std::byte(1)));
   return true;
@@ -61,7 +64,7 @@ void Bitlist::from_hexstring(std::string str) {
   // The most significant bit is the length of the bitlist and it's not to be
   // counted
   std::stringstream ss;
-  unsigned int buffer;
+  unsigned int buffer = 0;
   std::vector<std::byte> hex;
   for (int offset = 0; offset < str.length(); offset += 2) {
     ss.clear();

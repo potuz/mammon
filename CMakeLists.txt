@@ -25,7 +25,7 @@ endif()
 option(MINIMAL "Enable minimal network config")
 if(MINIMAL)
 	message(STATUS "Running minimal config")
-	configure_file(config/minimal.hpp include/config.hpp COPYONLY)
+	configure_file(config/minimal.hpp "${CMAKE_SOURCE_DIR}/include/config.hpp" COPYONLY)
 else()
 	message(STATUS "Running mainnet config")
 	configure_file(config/mainnet.hpp include/config.hpp COPYONLY)
@@ -41,7 +41,6 @@ add_executable (beacon-chain
 
 target_include_directories(beacon-chain PUBLIC
 			   "${CMAKE_SOURCE_DIR}/include"
-			   "${CMAKE_BINARY_DIR}/include"
 			  )
 
 
@@ -58,7 +57,6 @@ add_executable(test_ssz
 
 target_include_directories(test_ssz PUBLIC
 			   "${CMAKE_SOURCE_DIR}/include"
-			   "${CMAKE_BINARY_DIR}/include"
 			  )
 
 target_link_libraries(test_ssz
@@ -71,7 +69,6 @@ add_executable(test_bytes
 
 target_include_directories(test_bytes PUBLIC
 			   "${CMAKE_SOURCE_DIR}/include"
-			   "${CMAKE_BINARY_DIR}/include"
 			  )
 
 target_link_libraries(test_bytes

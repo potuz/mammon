@@ -36,10 +36,10 @@ public:
   operator bool() const { return value_; };
   operator bool &() { return value_; }
   operator Bytes<1>() const { return char(value_); }
-  std::vector<std::byte> serialize() const {
+  std::vector<std::byte> serialize() const override {
     return Bytes<1>(value_).serialize();
   }
-  bool deserialize(ssz::SSZIterator it, ssz::SSZIterator end) {
+  bool deserialize(ssz::SSZIterator it, ssz::SSZIterator end) override {
     if (std::distance(it, end) != 1)
       return false;
     auto muint = helpers::to_integer_little_endian<std::uint8_t>(&*it);
@@ -52,10 +52,12 @@ public:
   bool operator==(const Boolean &) const = default;
 
   static constexpr std::size_t ssz_size = 1;
-  std::size_t get_ssz_size() const { return ssz_size; }
+  std::size_t get_ssz_size() const override { return ssz_size; }
 
-  YAML::Node encode() const { return YAML::convert<bool>::encode(value_); }
-  bool decode(const YAML::Node &node) {
+  YAML::Node encode() const override {
+    return YAML::convert<bool>::encode(value_);
+  }
+  bool decode(const YAML::Node &node) override {
     return YAML::convert<bool>::decode(node, value_);
   }
 };

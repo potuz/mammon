@@ -37,10 +37,10 @@ public:
   operator std::uint64_t() const { return value_; };
   operator std::uint64_t &() { return value_; }
   operator Bytes8() const { return value_; }
-  std::vector<std::byte> serialize() const {
+  std::vector<std::byte> serialize() const override {
     return Bytes8(value_).serialize();
   }
-  bool deserialize(ssz::SSZIterator it, ssz::SSZIterator end) {
+  bool deserialize(ssz::SSZIterator it, ssz::SSZIterator end) override {
     if (std::distance(it, end) != sizeof(value_))
       return false;
     value_ = helpers::to_integer_little_endian<std::uint64_t>(&*it);
@@ -49,12 +49,12 @@ public:
 
   bool operator==(const Slot &) const = default;
   static constexpr std::size_t ssz_size = 8;
-  std::size_t get_ssz_size() const { return ssz_size; }
+  std::size_t get_ssz_size() const override { return ssz_size; }
 
-  YAML::Node encode() const {
+  YAML::Node encode() const override {
     return YAML::convert<std::uint64_t>::encode(value_);
   }
-  bool decode(const YAML::Node &node) {
+  bool decode(const YAML::Node &node) override {
     return YAML::convert<std::uint64_t>::decode(node, value_);
   }
 };

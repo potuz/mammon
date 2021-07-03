@@ -43,7 +43,7 @@ std::uint32_t compute_fixed_length(const std::vector<T *> parts) {
 
 namespace ssz {
 std::vector<std::byte>
-Container::serialize_(std::vector<const Container *> parts) {
+Container::serialize_(const std::vector<const Container *> &parts) {
   // Check if we are one of the basic types
   if (parts.size() == 0)
     return {};
@@ -71,7 +71,7 @@ Container::serialize_(std::vector<const Container *> parts) {
 }
 
 bool Container::deserialize_(SSZIterator it, SSZIterator end,
-                             std::vector<Container *> parts) {
+                             const std::vector<Container *> &parts) {
   auto fixed_length = compute_fixed_length(parts);
   SSZIterator begin = it;
   // We are hardcoding BYTES_PER_LENGTH_OFFSET = 4 here
@@ -83,9 +83,9 @@ bool Container::deserialize_(SSZIterator it, SSZIterator end,
     if (part_size) {
       if (std::distance(it, end) < part_size)
         return false;
-      if (!part->deserialize(it, it + part_size))
+      if (!part->deserialize(it, it + part_size)) // NOLINT
         return false;
-      it += part_size;
+      it += part_size; // NOLINT
     } else {
       if (std::distance(it, end) < constants::BYTES_PER_LENGTH_OFFSET)
         return false;
@@ -122,7 +122,7 @@ bool Container::decode_(const YAML::Node &node, std::vector<Part> parts) {
 
 YAML::Node Container::encode_(const std::vector<ConstPart> &parts) {
   YAML::Node node;
-  for (auto part : parts)
+  for (const auto &part : parts)
     node[part.first] = part.second->encode();
   return node;
 }

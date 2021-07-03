@@ -54,7 +54,7 @@ private:
     return ret_arr;
   }
   static auto chars_to_byte(std::string const &c) -> std::byte {
-    unsigned int x;
+    unsigned int x = 0;
     std::stringstream ss;
     ss << std::hex << c;
     ss >> x;
@@ -93,12 +93,12 @@ public:
   template <typename... T> // is_convertible_v<..,std::byte> fails.
   Bytes(T &&...l) : m_arr{{std::forward<std::byte>(std::byte(l))...}} {};
 
-  virtual std::vector<std::byte> serialize() const {
+  std::vector<std::byte> serialize() const override {
     std::vector<std::byte> ret(m_arr.cbegin(), m_arr.cend());
     return ret;
   }
 
-  bool deserialize(ssz::SSZIterator it, ssz::SSZIterator end) {
+  bool deserialize(ssz::SSZIterator it, ssz::SSZIterator end) override {
     if (std::distance(it, end) != N)
       return false;
     std::copy(it, end, m_arr.begin());
@@ -131,7 +131,7 @@ public:
   requires(std::unsigned_integral<T> && sizeof(T) == N) T
       to_integer_little_endian()
   const {
-    auto ptr = reinterpret_cast<const T *>(m_arr.data());
+    auto ptr = reinterpret_cast<const T *>(m_arr.data()); // NOLINT
     return *ptr;
   }
 
@@ -168,7 +168,7 @@ public:
 
   static constexpr std::size_t ssz_size = N;
   static constexpr std::size_t size() { return N; }
-  std::size_t get_ssz_size() const { return N; }
+  std::size_t get_ssz_size() const override { return N; }
 
   constexpr typename std::array<std::byte, N>::iterator begin() noexcept {
     return m_arr.begin();
@@ -188,11 +188,11 @@ public:
     return m_arr.cend();
   }
 
-  YAML::Node encode() const {
+  YAML::Node encode() const override {
     auto str = this->to_string();
     return YAML::convert<std::string>::encode(str);
   }
-  bool decode(const YAML::Node &node) {
+  bool decode(const YAML::Node &node) override {
     std::string str;
     if (!YAML::convert<std::string>::decode(node, str))
       return false;
@@ -202,12 +202,12 @@ public:
 };
 
 using Bytes1 = Bytes<1>;
-using Bytes4 = Bytes<4>;
-using Bytes8 = Bytes<8>;
-using Bytes20 = Bytes<20>;
-using Bytes32 = Bytes<32>;
-using Bytes48 = Bytes<48>;
-using Bytes96 = Bytes<96>;
+using Bytes4 = Bytes<4>;   // NOLINT
+using Bytes8 = Bytes<8>;   // NOLINT
+using Bytes20 = Bytes<20>; // NOLINT
+using Bytes32 = Bytes<32>; // NOLINT
+using Bytes48 = Bytes<48>; // NOLINT
+using Bytes96 = Bytes<96>; // NOLINT
 
 using BytesVector = std::vector<std::byte>;
 } // namespace eth
