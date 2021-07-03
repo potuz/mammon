@@ -1,7 +1,7 @@
-/*  slot.hpp 
- * 
- *  This file is part of Mammon. 
- *  mammon is a greedy and selfish ETH consensus client. 
+/*  slot.hpp
+ *
+ *  This file is part of Mammon.
+ *  mammon is a greedy and selfish ETH consensus client.
  *
  *  Copyright (c) 2021 - Reimundo Heluani (potuz) potuz@potuz.net
  *
@@ -22,41 +22,40 @@
 #pragma once
 
 #include "bytes.hpp"
+#include "helpers/bytes_to_int.hpp"
 #include "ssz/ssz_container.hpp"
-#include <cstdint>
 #include "yaml-cpp/yaml.h"
-#include"helpers/bytes_to_int.hpp"
+#include <cstdint>
 
+namespace eth {
+class Slot : public ssz::Container {
+private:
+  std::uint64_t value_;
 
-namespace eth
-{
-    class Slot : public ssz::Container
-    {
-        private:
-            
-            std::uint64_t value_;
+public:
+  constexpr Slot(std::uint64_t s = 0) : value_{s} {};
+  operator std::uint64_t() const { return value_; };
+  operator std::uint64_t &() { return value_; }
+  operator Bytes8() const { return value_; }
+  std::vector<std::byte> serialize() const {
+    return Bytes8(value_).serialize();
+  }
+  bool deserialize(ssz::SSZIterator it, ssz::SSZIterator end) {
+    if (std::distance(it, end) != sizeof(value_))
+      return false;
+    value_ = helpers::to_integer_little_endian<std::uint64_t>(&*it);
+    return true;
+  }
 
-        public:
+  bool operator==(const Slot &) const = default;
+  static constexpr std::size_t ssz_size = 8;
+  std::size_t get_ssz_size() const { return ssz_size; }
 
-            constexpr Slot(std::uint64_t s=0) : value_ {s} {};
-            operator std::uint64_t() const {return value_;};
-            operator std::uint64_t&() {return value_; }
-            operator Bytes8() const {return value_; }
-            std::vector<std::byte> serialize() const {return Bytes8(value_).serialize();}
-            bool deserialize(ssz::SSZIterator it, ssz::SSZIterator end)
-            {
-                if (std::distance(it, end) != sizeof(value_))
-                    return false;
-                value_ = helpers::to_integer_little_endian<std::uint64_t>(&*it);
-                return true;
-            }
-
-            bool operator==(const Slot&) const = default;
-            static constexpr std::size_t ssz_size = 8;
-            std::size_t get_ssz_size() const { return ssz_size; }
-
-            YAML::Node encode() const { return YAML::convert<std::uint64_t>::encode(value_); } 
-            bool decode(const YAML::Node& node) { return YAML::convert<std::uint64_t>::decode(node, value_); }
-    };
-}
-
+  YAML::Node encode() const {
+    return YAML::convert<std::uint64_t>::encode(value_);
+  }
+  bool decode(const YAML::Node &node) {
+    return YAML::convert<std::uint64_t>::decode(node, value_);
+  }
+};
+} // namespace eth

@@ -1,7 +1,7 @@
-/*  basic_types.h 
- * 
- *  This file is part of Mammon. 
- *  mammon is a greedy and selfish ETH consensus client. 
+/*  basic_types.h
+ *
+ *  This file is part of Mammon.
+ *  mammon is a greedy and selfish ETH consensus client.
  *
  *  Copyright (c) 2021 - Reimundo Heluani (potuz) potuz@potuz.net
  *
@@ -20,31 +20,29 @@
  */
 
 #pragma once
-#include "slot.hpp"
 #include "boolean.hpp"
+#include "slot.hpp"
 
-namespace eth 
-{
-    using Epoch = Slot;
-    using Counter = Slot;
-    using UnixTime = Slot;
-    using CommitteeIndex = Slot;
-    using ValidatorIndex = Slot;
-    using DepositIndex = Slot;
-    using Gwei = Slot;
+namespace eth {
+using Epoch = Slot;
+using Counter = Slot;
+using UnixTime = Slot;
+using CommitteeIndex = Slot;
+using ValidatorIndex = Slot;
+using DepositIndex = Slot;
+using Gwei = Slot;
 
-    using Root = Bytes32;
-    using Hash32 = Bytes32;
+using Root = Bytes32;
+using Hash32 = Bytes32;
 
-    using Version = Bytes4;
-    using DomainType = Bytes4;
-    using ForkDigest = Bytes4;
+using Version = Bytes4;
+using DomainType = Bytes4;
+using ForkDigest = Bytes4;
 
-    using Domain = Bytes32;
+using Domain = Bytes32;
 
-    using BLSPubkey = Bytes48;
-    using BLSSignature = Bytes96;
+using BLSPubkey = Bytes48;
+using BLSSignature = Bytes96;
 
-    using Eth1Address = Bytes20;
-}
-
+using Eth1Address = Bytes20;
+} // namespace eth

@@ -1,7 +1,7 @@
-/*  validator.hpp 
- * 
- *  This file is part of Mammon. 
- *  mammon is a greedy and selfish ETH consensus client. 
+/*  validator.hpp
+ *
+ *  This file is part of Mammon.
+ *  mammon is a greedy and selfish ETH consensus client.
  *
  *  Copyright (c) 2021 - Reimundo Heluani (potuz) potuz@potuz.net
  *
@@ -21,73 +21,56 @@
 
 #pragma once
 
-#include "common/basic_types.hpp" 
+#include "common/basic_types.hpp"
 #include "ssz/ssz_container.hpp"
 
-namespace eth
-{
-    class Validator : public ssz::Container
-    {
-        private:
-            BLSPubkey pubkey;
-            Bytes32 withdrawal_credentials;
-            Gwei effective_balance;
-            Boolean slashed;
-            Epoch activation_eligibility_epoch, activation_epoch, exit_epoch, withdrawable_epoch;
+namespace eth {
+class Validator : public ssz::Container {
+private:
+  BLSPubkey pubkey;
+  Bytes32 withdrawal_credentials;
+  Gwei effective_balance;
+  Boolean slashed;
+  Epoch activation_eligibility_epoch, activation_epoch, exit_epoch,
+      withdrawable_epoch;
 
-        public:
-            static constexpr std::size_t ssz_size = 121;
-            std::size_t get_ssz_size() const { return ssz_size; } 
-            BytesVector serialize() const
-            {
-                return serialize_({
-                        &pubkey, 
-                        &withdrawal_credentials,
-                        &effective_balance,
-                        &slashed,
-                        &activation_eligibility_epoch,
-                        &activation_epoch,
-                        &exit_epoch,
-                        &withdrawable_epoch}); 
-            }
-            bool deserialize(ssz::SSZIterator it, ssz::SSZIterator end)
-            {
-                return deserialize_(it, end, {
-                        &pubkey, 
-                        &withdrawal_credentials,
-                        &effective_balance,
-                        &slashed,
-                        &activation_eligibility_epoch,
-                        &activation_epoch,
-                        &exit_epoch,
-                        &withdrawable_epoch}); 
-            }
+public:
+  static constexpr std::size_t ssz_size = 121;
+  std::size_t get_ssz_size() const { return ssz_size; }
+  BytesVector serialize() const {
+    return serialize_({&pubkey, &withdrawal_credentials, &effective_balance,
+                       &slashed, &activation_eligibility_epoch,
+                       &activation_epoch, &exit_epoch, &withdrawable_epoch});
+  }
+  bool deserialize(ssz::SSZIterator it, ssz::SSZIterator end) {
+    return deserialize_(it, end,
+                        {&pubkey, &withdrawal_credentials, &effective_balance,
+                         &slashed, &activation_eligibility_epoch,
+                         &activation_epoch, &exit_epoch, &withdrawable_epoch});
+  }
 
-            YAML::Node encode() const
-            { 
-                return encode_({
-                        { "pubkey", &pubkey}, 
-                        { "withdrawal_credentials", &withdrawal_credentials},
-                        { "effective_balance", &effective_balance},
-                        { "slashed", &slashed},
-                        { "activation_eligibility_epoch", &activation_eligibility_epoch},
-                        { "activation_epoch", &activation_epoch},
-                        { "exit_epoch", &exit_epoch},
-                        { "withdrawable_epoch", &withdrawable_epoch} }); 
-            }
+  YAML::Node encode() const {
+    return encode_(
+        {{"pubkey", &pubkey},
+         {"withdrawal_credentials", &withdrawal_credentials},
+         {"effective_balance", &effective_balance},
+         {"slashed", &slashed},
+         {"activation_eligibility_epoch", &activation_eligibility_epoch},
+         {"activation_epoch", &activation_epoch},
+         {"exit_epoch", &exit_epoch},
+         {"withdrawable_epoch", &withdrawable_epoch}});
+  }
 
-            bool decode(const YAML::Node& node) 
-            { 
-                return decode_(node, {
-                        { "pubkey", &pubkey}, 
-                        { "withdrawal_credentials", &withdrawal_credentials},
-                        { "effective_balance", &effective_balance},
-                        { "slashed", &slashed},
-                        { "activation_eligibility_epoch", &activation_eligibility_epoch},
-                        { "activation_epoch", &activation_epoch},
-                        { "exit_epoch", &exit_epoch},
-                        { "withdrawable_epoch", &withdrawable_epoch} }); 
-            }
-
-    };
-}
+  bool decode(const YAML::Node &node) {
+    return decode_(
+        node, {{"pubkey", &pubkey},
+               {"withdrawal_credentials", &withdrawal_credentials},
+               {"effective_balance", &effective_balance},
+               {"slashed", &slashed},
+               {"activation_eligibility_epoch", &activation_eligibility_epoch},
+               {"activation_epoch", &activation_epoch},
+               {"exit_epoch", &exit_epoch},
+               {"withdrawable_epoch", &withdrawable_epoch}});
+  }
+};
+} // namespace eth

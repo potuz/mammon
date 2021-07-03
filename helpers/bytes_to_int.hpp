@@ -1,7 +1,7 @@
-/*  bytes_to_int.hpp 
- * 
- *  This file is part of Mammon. 
- *  mammon is a greedy and selfish ETH consensus client. 
+/*  bytes_to_int.hpp
+ *
+ *  This file is part of Mammon.
+ *  mammon is a greedy and selfish ETH consensus client.
  *
  *  Copyright (c) 2021 - Reimundo Heluani (potuz) potuz@potuz.net
  *
@@ -23,13 +23,12 @@
 #include <concepts>
 #include <cstddef>
 
-namespace helpers
-{
-    //The caller is responsible to check the bounds
-    template<typename T> requires (std::unsigned_integral<T>)
-    T to_integer_little_endian(const std::byte * arr)
-    {
-        auto ptr = reinterpret_cast<const T*>(arr);
-        return *ptr;
-    }
+namespace helpers {
+// The caller is responsible to check the bounds
+template <typename T>
+requires(std::unsigned_integral<T>) T
+    to_integer_little_endian(const std::byte *arr) {
+  auto ptr = reinterpret_cast<const T *>(arr);
+  return *ptr;
 }
+} // namespace helpers

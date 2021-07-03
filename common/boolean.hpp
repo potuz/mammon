@@ -1,7 +1,7 @@
-/*  boolean.hpp 
- * 
- *  This file is part of Mammon. 
- *  mammon is a greedy and selfish ETH consensus client. 
+/*  boolean.hpp
+ *
+ *  This file is part of Mammon.
+ *  mammon is a greedy and selfish ETH consensus client.
  *
  *  Copyright (c) 2021 - Reimundo Heluani (potuz) potuz@potuz.net
  *
@@ -21,43 +21,42 @@
 
 #pragma once
 
+#include "common/bytes.hpp"
+#include "helpers/bytes_to_int.hpp"
 #include "ssz/ssz_container.hpp"
-#include "common/basic_types.hpp"
 #include "yaml-cpp/yaml.h"
 
-namespace eth
-{
-    class Boolean : public ssz::Container
-    {
-        private:
-            
-            bool value_;
+namespace eth {
+class Boolean : public ssz::Container {
+private:
+  bool value_;
 
-        public:
+public:
+  Boolean(bool s = false) : value_{s} {};
+  operator bool() const { return value_; };
+  operator bool &() { return value_; }
+  operator Bytes<1>() const { return char(value_); }
+  std::vector<std::byte> serialize() const {
+    return Bytes<1>(value_).serialize();
+  }
+  bool deserialize(ssz::SSZIterator it, ssz::SSZIterator end) {
+    if (std::distance(it, end) != 1)
+      return false;
+    auto muint = helpers::to_integer_little_endian<std::uint8_t>(&*it);
+    if (muint > 1)
+      return false;
+    value_ = bool(muint);
+    return true;
+  }
 
-            Boolean(bool s=false) : value_ {s} {};
-            operator bool() const {return value_;};
-            operator bool&() {return value_; }
-            operator Bytes<1>() const {return char(value_); }
-            std::vector<std::byte> serialize() const {return Bytes<1>(value_).serialize();}
-            bool deserialize(ssz::SSZIterator it, ssz::SSZIterator end)
-            {
-                if (std::distance(it,end) != 1)
-                    return false;
-                auto muint = helpers::to_integer_little_endian<std::uint8_t>(&*it);
-                if (muint > 1)
-                    return false;
-                value_ = bool(muint);
-                return true;
-            }
+  bool operator==(const Boolean &) const = default;
 
-            bool operator==(const Boolean&) const = default;
-            
-            static constexpr std::size_t ssz_size = 1;
-            std::size_t get_ssz_size() const { return ssz_size; }
+  static constexpr std::size_t ssz_size = 1;
+  std::size_t get_ssz_size() const { return ssz_size; }
 
-            YAML::Node encode() const { return YAML::convert<bool>::encode(value_); } 
-            bool decode(const YAML::Node& node) { return YAML::convert<bool>::decode(node, value_); }
-    };
-}
-
+  YAML::Node encode() const { return YAML::convert<bool>::encode(value_); }
+  bool decode(const YAML::Node &node) {
+    return YAML::convert<bool>::decode(node, value_);
+  }
+};
+} // namespace eth

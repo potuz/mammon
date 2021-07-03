@@ -1,7 +1,7 @@
-/*  test_ssz.cpp 
- * 
- *  This file is part of Mammon. 
- *  mammon is a greedy and selfish ETH consensus client. 
+/*  test_ssz.cpp
+ *
+ *  This file is part of Mammon.
+ *  mammon is a greedy and selfish ETH consensus client.
  *
  *  Copyright (c) 2021 - Reimundo Heluani (potuz) potuz@potuz.net
  *
@@ -19,115 +19,137 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "acutest.h"
+#include "beacon-chain/attestation.hpp"
+#include "beacon-chain/beacon_block.hpp"
+#include "beacon-chain/beacon_state.hpp"
+#include "beacon-chain/deposits.hpp"
+#include "beacon-chain/eth1data.hpp"
+#include "beacon-chain/validator.hpp"
+#include "common/bitvector.hpp"
+#include "config.hpp"
+#include "snappy.h"
+#include "yaml-cpp/yaml.h"
 #include <cstdint>
 #include <filesystem>
 #include <fstream>
-#include "acutest.h" 
-#include "config.hpp"
-#include "common/bitvector.hpp"
-#include "beacon-chain/attestation.hpp" 
-#include "beacon-chain/eth1data.hpp" 
-#include "beacon-chain/deposits.hpp" 
-#include "beacon-chain/beacon_block.hpp" 
-#include "beacon-chain/validator.hpp"
-#include "beacon-chain/beacon_state.hpp"
-#include "snappy.h"
-#include "yaml-cpp/yaml.h"
 
 namespace fs = std::filesystem;
 
-template<typename T>
-void test_ssz(const std::string &path)
-{
-    auto base_path = constants::TEST_VECTORS_PATH + path;
-    for (auto& p1 : fs::directory_iterator(base_path))
-        for (auto& p2 : fs::directory_iterator(p1))
-            for (auto& p3 : fs::directory_iterator(p2))
-            {
-               auto node = YAML::LoadFile(p2.path().string() + "/value.yaml");
-               T ssz_type = node.as<T>();
-               auto serialized = ssz_type.serialize();
+template <typename T> void test_ssz(const std::string &path) {
+  auto base_path = constants::TEST_VECTORS_PATH + path;
+  for (auto &p1 : fs::directory_iterator(base_path))
+    for (auto &p2 : fs::directory_iterator(p1))
+      for (auto &p3 : fs::directory_iterator(p2)) {
+        auto node = YAML::LoadFile(p2.path().string() + "/value.yaml");
+        T ssz_type = node.as<T>();
+        auto serialized = ssz_type.serialize();
 
-               auto ssz_snappy_path = p2.path().string() + "/serialized.ssz_snappy";
-               std::ifstream ssz_snappy(ssz_snappy_path, std::ios::in | std::ios::binary);
-               if (not ssz_snappy.is_open())
-                   throw std::filesystem::filesystem_error("could not open file", p2.path(), std::error_code());
-               
-               const std::size_t size = std::filesystem::file_size(ssz_snappy_path);
-               std::vector<std::byte> content(size);
-               ssz_snappy.read(reinterpret_cast<char*>(content.data()), size);
-               ssz_snappy.close();
+        auto ssz_snappy_path = p2.path().string() + "/serialized.ssz_snappy";
+        std::ifstream ssz_snappy(ssz_snappy_path,
+                                 std::ios::in | std::ios::binary);
+        if (not ssz_snappy.is_open())
+          throw std::filesystem::filesystem_error("could not open file",
+                                                  p2.path(), std::error_code());
 
-               std::vector<std::byte> output(serialized.size());
-               if (!snappy::RawUncompress(reinterpret_cast<char*>(content.data()), size,
-                           reinterpret_cast<char*>(output.data())))
-                   throw std::filesystem::filesystem_error("could not uncompress file", p2.path(), 
-                           std::error_code());
+        const std::size_t size = std::filesystem::file_size(ssz_snappy_path);
+        std::vector<std::byte> content(size);
+        ssz_snappy.read(reinterpret_cast<char *>(content.data()), size);
+        ssz_snappy.close();
 
-               T obj;
+        std::vector<std::byte> output(serialized.size());
+        if (!snappy::RawUncompress(reinterpret_cast<char *>(content.data()),
+                                   size,
+                                   reinterpret_cast<char *>(output.data())))
+          throw std::filesystem::filesystem_error("could not uncompress file",
+                                                  p2.path(), std::error_code());
 
-               obj.deserialize(output.begin(), output.end());
+        T obj;
 
-               TEST_CHECK(obj == ssz_type);
-               TEST_MSG("Processing file: %s", ssz_snappy_path.c_str());
-               TEST_DUMP("Expected:", output.data(), serialized.size());
-               TEST_DUMP("Produced:", serialized.data(), serialized.size());
+        obj.deserialize(output.begin(), output.end());
 
-               TEST_CHECK(serialized == output);
-               TEST_MSG("Processing file: %s", ssz_snappy_path.c_str());
-               TEST_DUMP("Expected:", output.data(), serialized.size());
-               TEST_DUMP("Produced:", serialized.data(), serialized.size());
+        TEST_CHECK(obj == ssz_type);
+        TEST_MSG("Processing file: %s", ssz_snappy_path.c_str());
+        TEST_DUMP("Expected:", output.data(), serialized.size());
+        TEST_DUMP("Produced:", serialized.data(), serialized.size());
 
-            }
+        TEST_CHECK(serialized == output);
+        TEST_MSG("Processing file: %s", ssz_snappy_path.c_str());
+        TEST_DUMP("Expected:", output.data(), serialized.size());
+        TEST_DUMP("Produced:", serialized.data(), serialized.size());
+      }
 }
 
-auto test_fork = [](){ test_ssz<eth::Fork>("Fork"); }; 
-auto test_forkdata = [](){ test_ssz<eth::ForkData>("ForkData"); }; 
-auto test_checkpoint = [](){ test_ssz<eth::Checkpoint>("Checkpoint"); }; 
-auto test_signingdata = [](){ test_ssz<eth::SigningData>("SigningData"); }; 
-auto test_attestationdata = []() { test_ssz<eth::AttestationData>("AttestationData"); };
-auto test_indexedattestation = []() { test_ssz<eth::IndexedAttestation>("IndexedAttestation"); };
-auto test_pendingattestation = []() { test_ssz<eth::PendingAttestation>("PendingAttestation"); };
+auto test_fork = []() { test_ssz<eth::Fork>("Fork"); };
+auto test_forkdata = []() { test_ssz<eth::ForkData>("ForkData"); };
+auto test_checkpoint = []() { test_ssz<eth::Checkpoint>("Checkpoint"); };
+auto test_signingdata = []() { test_ssz<eth::SigningData>("SigningData"); };
+auto test_attestationdata = []() {
+  test_ssz<eth::AttestationData>("AttestationData");
+};
+auto test_indexedattestation = []() {
+  test_ssz<eth::IndexedAttestation>("IndexedAttestation");
+};
+auto test_pendingattestation = []() {
+  test_ssz<eth::PendingAttestation>("PendingAttestation");
+};
 auto test_attestation = []() { test_ssz<eth::Attestation>("Attestation"); };
-auto test_depositmessage = []() { test_ssz<eth::DepositMessage>("DepositMessage"); };
+auto test_depositmessage = []() {
+  test_ssz<eth::DepositMessage>("DepositMessage");
+};
 auto test_depositdata = []() { test_ssz<eth::DepositData>("DepositData"); };
 auto test_deposit = []() { test_ssz<eth::Deposit>("Deposit"); };
 auto test_eth1data = []() { test_ssz<eth::Eth1Data>("Eth1Data"); };
-auto test_beaconblockheader = []() { test_ssz<eth::BeaconBlockHeader>("BeaconBlockHeader"); };
-auto test_beaconblockbody = []() { test_ssz<eth::BeaconBlockBody>("BeaconBlockBody"); };
-auto test_beaconblock= []() { test_ssz<eth::BeaconBlock>("BeaconBlock"); };
-auto test_signedbeaconblockheader = []() { test_ssz<eth::SignedBeaconBlockHeader>("SignedBeaconBlockHeader"); };
-auto test_signedbeaconblock= []() { test_ssz<eth::SignedBeaconBlock>("SignedBeaconBlock"); };
-auto test_proposerslashing = []() { test_ssz<eth::ProposerSlashing>("ProposerSlashing"); };
-auto test_attesterslashing = []() { test_ssz<eth::AttesterSlashing>("AttesterSlashing"); };
-auto test_voluntaryexit = []() { test_ssz<eth::VoluntaryExit>("VoluntaryExit"); };
-auto test_signedvoluntaryexit = []() { test_ssz<eth::SignedVoluntaryExit>("SignedVoluntaryExit"); };
+auto test_beaconblockheader = []() {
+  test_ssz<eth::BeaconBlockHeader>("BeaconBlockHeader");
+};
+auto test_beaconblockbody = []() {
+  test_ssz<eth::BeaconBlockBody>("BeaconBlockBody");
+};
+auto test_beaconblock = []() { test_ssz<eth::BeaconBlock>("BeaconBlock"); };
+auto test_signedbeaconblockheader = []() {
+  test_ssz<eth::SignedBeaconBlockHeader>("SignedBeaconBlockHeader");
+};
+auto test_signedbeaconblock = []() {
+  test_ssz<eth::SignedBeaconBlock>("SignedBeaconBlock");
+};
+auto test_proposerslashing = []() {
+  test_ssz<eth::ProposerSlashing>("ProposerSlashing");
+};
+auto test_attesterslashing = []() {
+  test_ssz<eth::AttesterSlashing>("AttesterSlashing");
+};
+auto test_voluntaryexit = []() {
+  test_ssz<eth::VoluntaryExit>("VoluntaryExit");
+};
+auto test_signedvoluntaryexit = []() {
+  test_ssz<eth::SignedVoluntaryExit>("SignedVoluntaryExit");
+};
 auto test_validator = []() { test_ssz<eth::Validator>("Validator"); };
 auto test_beaconstate = []() { test_ssz<eth::BeaconState>("BeaconState"); };
 
 TEST_LIST = {
-    { "serialize_fork", test_fork },
-    { "serialize_forkdata", test_forkdata },
-    { "serialize_checkpoint", test_checkpoint },
-    { "serialize_signingdata", test_signingdata },
-    { "serialize_attestationdata", test_attestationdata },
-    { "serialize_indexedattestation", test_indexedattestation },
-    { "serialize_pendingattestation", test_pendingattestation },
-    { "serialize_attestation", test_attestation },
-    { "serialize_depositmessage", test_depositmessage},
-    { "serialize_depositdata", test_depositdata},
-    { "serialize_deposit", test_deposit},
-    { "serialize_eth1data", test_eth1data},
-    { "serialize_beaconblockheader", test_beaconblockheader},
-    { "serialize_beaconblockbody", test_beaconblockbody},
-    { "serialize_beaconblock", test_beaconblock},
-    { "serialize_signedbeaconblockheader", test_signedbeaconblockheader},
-    { "serialize_signedbeaconblock", test_signedbeaconblock},
-    { "serialize_proposerslashing", test_proposerslashing},
-    { "serialize_attesterslashing", test_attesterslashing},
-    { "serialize_voluntaryexit", test_voluntaryexit},
-    { "serialize_signedvoluntaryexit", test_signedvoluntaryexit},
-    { "serialize_validator", test_validator},
-    { "serialize_beaconstate", test_beaconstate},
-    { NULL, NULL }
-};
+    {"serialize_fork", test_fork},
+    {"serialize_forkdata", test_forkdata},
+    {"serialize_checkpoint", test_checkpoint},
+    {"serialize_signingdata", test_signingdata},
+    {"serialize_attestationdata", test_attestationdata},
+    {"serialize_indexedattestation", test_indexedattestation},
+    {"serialize_pendingattestation", test_pendingattestation},
+    {"serialize_attestation", test_attestation},
+    {"serialize_depositmessage", test_depositmessage},
+    {"serialize_depositdata", test_depositdata},
+    {"serialize_deposit", test_deposit},
+    {"serialize_eth1data", test_eth1data},
+    {"serialize_beaconblockheader", test_beaconblockheader},
+    {"serialize_beaconblockbody", test_beaconblockbody},
+    {"serialize_beaconblock", test_beaconblock},
+    {"serialize_signedbeaconblockheader", test_signedbeaconblockheader},
+    {"serialize_signedbeaconblock", test_signedbeaconblock},
+    {"serialize_proposerslashing", test_proposerslashing},
+    {"serialize_attesterslashing", test_attesterslashing},
+    {"serialize_voluntaryexit", test_voluntaryexit},
+    {"serialize_signedvoluntaryexit", test_signedvoluntaryexit},
+    {"serialize_validator", test_validator},
+    {"serialize_beaconstate", test_beaconstate},
+    {NULL, NULL}};

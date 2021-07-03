@@ -1,7 +1,7 @@
 /*  minimal.hpp
- * 
- *  This file is part of Mammon. 
- *  mammon is a greedy and selfish ETH consensus client. 
+ *
+ *  This file is part of Mammon.
+ *  mammon is a greedy and selfish ETH consensus client.
  *
  *  Copyright (c) 2021 - Reimundo Heluani (potuz) potuz@potuz.net
  *
@@ -21,19 +21,17 @@
 
 #pragma once
 
-#include <cstdint>
 #include "common/basic_types.hpp"
+#include <cstdint>
 
 using namespace std::string_literals;
 
-namespace constants
-{
+namespace constants {
 
 const std::uint64_t MIN_GENESIS_ACTIVE_VALIDATOR_COUNT = 64;
 const std::uint64_t MIN_GENESIS_TIME = 1578009600;
 const eth::Version GENESIS_FORK_VERSION = 0x00000001;
 const std::uint64_t GENESIS_DELAY = 300;
-
 
 // ALTAIR_FORK_VERSION: 0x01000001
 // ALTAIR_FORK_EPOCH: 18446744073709551615
@@ -49,17 +47,17 @@ const std::uint64_t MIN_VALIDATOR_WITHDRAWABILITY_DELAY = 256;
 const std::uint64_t SHARD_COMMITTEE_PERIOD = 64;
 const std::uint64_t ETH1_FOLLOW_DISTANCE = 16;
 
-
 const eth::Gwei EJECTION_BALANCE = 16000000000;
 const std::uint64_t MIN_PER_EPOCH_CHURN_LIMIT = 4;
 const std::uint64_t CHURN_LIMIT_QUOTIENT = 65536;
 
-
 const int DEPOSIT_CHAIN_ID = 5;
 const int DEPOSIT_NETWORK_ID = 5;
-const eth::Eth1Address DEPOSIT_CONTRACT_ADDRESS = "0x1234567890123456789012345678901234567890"s;
+const eth::Eth1Address DEPOSIT_CONTRACT_ADDRESS =
+    "0x1234567890123456789012345678901234567890"s;
 
-const std::string TEST_VECTORS_PATH = "../../../eth2.0-spec-tests/tests/minimal/phase0/ssz_static/";
+const std::string TEST_VECTORS_PATH =
+    "../../../eth2.0-spec-tests/tests/minimal/phase0/ssz_static/";
 
 constexpr int DEPOSIT_CONTRACT_TREE_DEPTH = 32;
 constexpr std::uint64_t JUSTIFICATION_BITS_LENGTH = 4;
@@ -98,4 +96,4 @@ constexpr uint MAX_ATTESTATIONS = 128;
 constexpr uint MAX_DEPOSITS = 16;
 constexpr uint MAX_VOLUNTARY_EXITS = 16;
 
-};
+}; // namespace constants

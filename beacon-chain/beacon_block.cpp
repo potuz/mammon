@@ -1,7 +1,7 @@
-/*  beacon_block.cpp 
- * 
- *  This file is part of Mammon. 
- *  mammon is a greedy and selfish ETH consensus client. 
+/*  beacon_block.cpp
+ *
+ *  This file is part of Mammon.
+ *  mammon is a greedy and selfish ETH consensus client.
  *
  *  Copyright (c) 2021 - Reimundo Heluani (potuz) potuz@potuz.net
  *
@@ -22,59 +22,34 @@
 #include "beacon_block.hpp"
 #include "ssz/ssz.hpp"
 
-namespace eth
-{
-    void BeaconBlockBody::randao_reveal(BLSSignature s) 
-    {
-        randao_reveal_ = std::move(s);
-    }
-    void BeaconBlockBody::eth1_data(Eth1Data data)
-    {
-        eth1_data_ = std::move(data);
-    }
-    void BeaconBlockBody::graffiti(Bytes32 g)
-    {
-        graffiti_ = std::move(g);
-    }
-    void BeaconBlockBody::proposer_slashings(ListFixedSizedParts<ProposerSlashing> p)
-    {
-        proposer_slashings_ = std::move(p);
-    }
-    void BeaconBlockBody::attester_slashings(ListVariableSizedParts<AttesterSlashing> a)
-    {
-        attester_slashings_ = std::move(a);
-    }
-    void BeaconBlockBody::attestations(ListVariableSizedParts<Attestation> a)
-    {
-        attestations_ = std::move(a);
-    }
-    void BeaconBlockBody::deposits(ListFixedSizedParts<Deposit> d)
-    {
-        deposits_ = std::move(d);
-    }
-    void BeaconBlockBody::voluntary_exits(ListFixedSizedParts<SignedVoluntaryExit> s)
-    {
-        voluntary_exits_ = std::move(s);
-    }
-
-    void BeaconBlock::slot(Slot s)
-    {
-        slot_ = s;
-    }
-    void BeaconBlock::proposer_index(ValidatorIndex idx)
-    {
-        proposer_index_ = idx;
-    }
-    void BeaconBlock::parent_root(Root r)
-    {
-        parent_root_ = std::move(r);
-    }
-    void BeaconBlock::state_root(Root r)
-    {
-        state_root_ = std::move(r);
-    }
-    void BeaconBlock::body(BeaconBlockBody b)
-    {
-        body_ = std::move(b);
-    }
+namespace eth {
+void BeaconBlockBody::randao_reveal(BLSSignature s) {
+  randao_reveal_ = std::move(s);
 }
+void BeaconBlockBody::eth1_data(Eth1Data data) { eth1_data_ = std::move(data); }
+void BeaconBlockBody::graffiti(Bytes32 g) { graffiti_ = std::move(g); }
+void BeaconBlockBody::proposer_slashings(
+    ListFixedSizedParts<ProposerSlashing> p) {
+  proposer_slashings_ = std::move(p);
+}
+void BeaconBlockBody::attester_slashings(
+    ListVariableSizedParts<AttesterSlashing> a) {
+  attester_slashings_ = std::move(a);
+}
+void BeaconBlockBody::attestations(ListVariableSizedParts<Attestation> a) {
+  attestations_ = std::move(a);
+}
+void BeaconBlockBody::deposits(ListFixedSizedParts<Deposit> d) {
+  deposits_ = std::move(d);
+}
+void BeaconBlockBody::voluntary_exits(
+    ListFixedSizedParts<SignedVoluntaryExit> s) {
+  voluntary_exits_ = std::move(s);
+}
+
+void BeaconBlock::slot(Slot s) { slot_ = s; }
+void BeaconBlock::proposer_index(ValidatorIndex idx) { proposer_index_ = idx; }
+void BeaconBlock::parent_root(Root r) { parent_root_ = std::move(r); }
+void BeaconBlock::state_root(Root r) { state_root_ = std::move(r); }
+void BeaconBlock::body(BeaconBlockBody b) { body_ = std::move(b); }
+} // namespace eth

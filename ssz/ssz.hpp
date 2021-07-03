@@ -1,7 +1,7 @@
-/*  ssz.hpp 
- * 
- *  This file is part of Mammon. 
- *  mammon is a greedy and selfish ETH consensus client. 
+/*  ssz.hpp
+ *
+ *  This file is part of Mammon.
+ *  mammon is a greedy and selfish ETH consensus client.
  *
  *  Copyright (c) 2021 - Reimundo Heluani (potuz) potuz@potuz.net
  *
@@ -22,9 +22,7 @@
 #pragma once
 #include <cstdint>
 
-namespace constants
-{
-    constexpr std::uint32_t BYTES_PER_LENGTH_OFFSET = 4;
-    constexpr unsigned int BYTES_PER_CHUNK = 32;
-}
-
+namespace constants {
+constexpr std::uint32_t BYTES_PER_LENGTH_OFFSET = 4;
+constexpr unsigned int BYTES_PER_CHUNK = 32;
+} // namespace constants

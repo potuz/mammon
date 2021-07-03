@@ -1,7 +1,7 @@
-/*  bitlist.hpp 
- * 
- *  This file is part of Mammon. 
- *  mammon is a greedy and selfish ETH consensus client. 
+/*  bitlist.hpp
+ *
+ *  This file is part of Mammon.
+ *  mammon is a greedy and selfish ETH consensus client.
  *
  *  Copyright (c) 2021 - Reimundo Heluani (potuz) potuz@potuz.net
  *
@@ -20,40 +20,34 @@
  */
 
 #pragma once
-#include <vector>
-#include <ostream>
-#include "ssz/ssz_container.hpp" 
+#include "ssz/ssz_container.hpp"
 #include "yaml-cpp/yaml.h"
+#include <ostream>
+#include <vector>
 
-namespace eth
-{
-    class Bitlist : public ssz::Container
-    {
-        private:
-            
-            std::vector<bool> m_arr;
+namespace eth {
+class Bitlist : public ssz::Container {
+private:
+  std::vector<bool> m_arr;
 
-        public:
-            template<typename ...T>
-            Bitlist (T&&...l) : m_arr {{std::forward<T>(l)...}} {};
+public:
+  template <typename... T>
+  Bitlist(T &&...l) : m_arr{{std::forward<T>(l)...}} {};
 
-            friend std::ostream& operator<< (std::ostream& os, const Bitlist& m_bits)
-            {
-                for (auto const &b : m_bits.m_arr)
-                    os << b;
-                return os;
-            };
+  friend std::ostream &operator<<(std::ostream &os, const Bitlist &m_bits) {
+    for (auto const &b : m_bits.m_arr)
+      os << b;
+    return os;
+  };
 
-            void from_hexstring(std::string str);
-            std::string to_string() const;
-            std::size_t size() const { return m_arr.size(); }
+  void from_hexstring(std::string str);
+  std::string to_string() const;
+  std::size_t size() const { return m_arr.size(); }
 
-            std::vector<std::byte> serialize() const;
-            bool deserialize(ssz::SSZIterator it, ssz::SSZIterator end);
-            bool operator==(const Bitlist&) const = default;
-            YAML::Node encode() const;
-            bool decode(const YAML::Node& node);
-    };
-}
-
-
+  std::vector<std::byte> serialize() const;
+  bool deserialize(ssz::SSZIterator it, ssz::SSZIterator end);
+  bool operator==(const Bitlist &) const = default;
+  YAML::Node encode() const;
+  bool decode(const YAML::Node &node);
+};
+} // namespace eth

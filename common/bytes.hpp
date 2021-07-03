@@ -1,7 +1,7 @@
-/*  bytes.hpp 
- * 
- *  This file is part of Mammon. 
- *  mammon is a greedy and selfish ETH consensus client. 
+/*  bytes.hpp
+ *
+ *  This file is part of Mammon.
+ *  mammon is a greedy and selfish ETH consensus client.
  *
  *  Copyright (c) 2021 - Reimundo Heluani (potuz) potuz@potuz.net
  *
@@ -21,227 +21,193 @@
 
 #pragma once
 
-#include <stdexcept>
-#include <cstddef>
-#include <array>
-#include <vector>
-#include <iomanip>
-#include <iostream>
-#include <concepts>
-#include <cstring>
-#include <bit>
 #include "ssz/ssz_container.hpp"
 #include "yaml-cpp/yaml.h"
+#include <array>
+#include <bit>
+#include <concepts>
+#include <cstddef>
+#include <cstring>
+#include <iomanip>
+#include <iostream>
+#include <stdexcept>
+#include <vector>
 
-namespace eth
-{
-    template<std::size_t N>
-    class Bytes : public ssz::Container 
-    {
-        private:
+namespace eth {
+template <std::size_t N> class Bytes : public ssz::Container {
+private:
+  std::array<std::byte, N> m_arr;
 
-            std::array<std::byte, N> m_arr;
+  // The caller must check that the integral value fits in the array.
+  constexpr static auto bytes_from_int(std::integral auto value)
+      -> std::array<std::byte, N> {
+    std::array<std::byte, N> ret_arr = {};
+    if constexpr (std::endian::native == std::endian::big) {
+      std::memcpy(ret_arr.data() + N - 1 - sizeof(value), &value,
+                  sizeof(value));
+      std::reverse(ret_arr.begin(), ret_arr.end());
+    }
+    // We assume if it's not big endian we are little endian
+    else {
+      std::memcpy(ret_arr.data(), &value, sizeof(value));
+    }
+    return ret_arr;
+  }
+  static auto chars_to_byte(std::string const &c) -> std::byte {
+    unsigned int x;
+    std::stringstream ss;
+    ss << std::hex << c;
+    ss >> x;
+    return std::byte(x);
+  }
 
-            //The caller must check that the integral value fits in the array. 
-            constexpr static auto bytes_from_int(std::integral auto value) -> std::array<std::byte, N> 
-            {
-                std::array<std::byte, N> ret_arr = {};
-                if constexpr (std::endian::native == std::endian::big) {
-                    std::memcpy(ret_arr.data() + N - 1 - sizeof(value), &value, sizeof(value));
-                    std::reverse(ret_arr.begin(), ret_arr.end());
-                } 
-                // We assume if it's not big endian we are little endian
-                else
-                {
-                    std::memcpy(ret_arr.data(), &value, sizeof(value));
-                }
-                return ret_arr;
-            }
-            static auto chars_to_byte(std::string const & c) -> std::byte
-            {
-                    unsigned int x;
-                    std::stringstream ss;
-                    ss << std::hex << c;
-                    ss >> x;
-                    return std::byte(x);
-            }
+  static auto bytes_from_str(std::string &str) -> std::array<std::byte, N> {
+    if (!str.starts_with("0x"))
+      throw std::invalid_argument("string not prepended with 0x");
 
-            static auto bytes_from_str(std::string &str) ->  std::array<std::byte, N>
-            {
-                if (!str.starts_with("0x"))
-                    throw std::invalid_argument("string not prepended with 0x");
+    str.erase(0, 2);
 
-                str.erase(0,2);
-               
-                if (str.size() > 2*N)
-                    throw std::out_of_range("integer larger than bytes size");
-                
-                if (str.size() % 2 == 1)
-                    str.insert(0,"0");
+    if (str.size() > 2 * N)
+      throw std::out_of_range("integer larger than bytes size");
 
-                std::array<std::byte, N> ret_arr = {};
-                for (int i = 0; i < str.size(); i += 2)
-                    ret_arr[i/2] = chars_to_byte(str.substr(i,2));
-                return ret_arr;
-            }
+    if (str.size() % 2 == 1)
+      str.insert(0, "0");
 
-        public:
+    std::array<std::byte, N> ret_arr = {};
+    for (int i = 0; i < str.size(); i += 2)
+      ret_arr[i / 2] = chars_to_byte(str.substr(i, 2));
+    return ret_arr;
+  }
 
-            Bytes() : m_arr {} {}; 
-            Bytes( std::string hex ) : m_arr {bytes_from_str(hex)} {};
-            Bytes( std::integral auto value ) requires (sizeof(value) <= N) : m_arr { bytes_from_int(value) } {};
-            Bytes( std::array<std::byte,N> arr ) : m_arr {arr} {};
-            Bytes( std::vector<std::byte> arr ) 
-            {
-                if (arr.size() != N)
-                    throw std::out_of_range ("vector of different size than bytes");
-                std::copy_n(arr.begin(), N, m_arr.begin());
-            }
-            template<typename ...T>     // is_convertible_v<..,std::byte> fails. 
-            Bytes(T&&...l) : m_arr{{std::forward<std::byte>(std::byte(l))...}}  {};
+public:
+  Bytes() : m_arr{} {};
+  Bytes(std::string hex) : m_arr{bytes_from_str(hex)} {};
+  Bytes(std::integral auto value) requires(sizeof(value) <= N)
+      : m_arr{bytes_from_int(value)} {};
+  Bytes(std::array<std::byte, N> arr) : m_arr{arr} {};
+  Bytes(std::vector<std::byte> arr) {
+    if (arr.size() != N)
+      throw std::out_of_range("vector of different size than bytes");
+    std::copy_n(arr.begin(), N, m_arr.begin());
+  }
+  template <typename... T> // is_convertible_v<..,std::byte> fails.
+  Bytes(T &&...l) : m_arr{{std::forward<std::byte>(std::byte(l))...}} {};
 
-            virtual std::vector<std::byte> serialize() const
-            {
-                std::vector<std::byte> ret(m_arr.cbegin(),m_arr.cend());
-                return ret;
-            }
+  virtual std::vector<std::byte> serialize() const {
+    std::vector<std::byte> ret(m_arr.cbegin(), m_arr.cend());
+    return ret;
+  }
 
-            bool deserialize(ssz::SSZIterator it, ssz::SSZIterator end)
-            {
-                if (std::distance(it, end) != N)
-                    return false;
-                std::copy(it,end,m_arr.begin());
-                return true;
-            }
+  bool deserialize(ssz::SSZIterator it, ssz::SSZIterator end) {
+    if (std::distance(it, end) != N)
+      return false;
+    std::copy(it, end, m_arr.begin());
+    return true;
+  }
 
-            operator std::vector<std::byte>()
-            {
-                std::vector<std::byte> ret(m_arr.begin(),m_arr.end());
-                return ret;
-            }
+  operator std::vector<std::byte>() {
+    std::vector<std::byte> ret(m_arr.begin(), m_arr.end());
+    return ret;
+  }
 
-            constexpr std::byte* data() noexcept
-            {
-                return m_arr.data();
-            }
+  constexpr std::byte *data() noexcept { return m_arr.data(); }
 
-            const std::array<std::byte, N>& to_array() const
-            {
-                return m_arr;
-            }
+  const std::array<std::byte, N> &to_array() const { return m_arr; }
 
-            std::string to_string() const
-            {
-                std::stringstream os;
-                std::ios_base::fmtflags save = std::cout.flags();
-                os << "0x";
-                for (auto i = m_arr.cbegin(); i != m_arr.cend(); ++i)
-                    os << std::setfill('0') << std::setw(2) << std::hex << std::to_integer<int>(*i);
-                std::cout.flags(save);
-                return os.str();
-            };
+  std::string to_string() const {
+    std::stringstream os;
+    std::ios_base::fmtflags save = std::cout.flags();
+    os << "0x";
+    for (auto i = m_arr.cbegin(); i != m_arr.cend(); ++i)
+      os << std::setfill('0') << std::setw(2) << std::hex
+         << std::to_integer<int>(*i);
+    std::cout.flags(save);
+    return os.str();
+  };
 
-            void from_string(std::string hex)
-            {
-                m_arr = bytes_from_str(hex);
-            }
+  void from_string(std::string hex) { m_arr = bytes_from_str(hex); }
 
-            template<typename T> requires (std::unsigned_integral<T> && sizeof(T) == N)
-            T to_integer_little_endian() const
-            {
-                auto ptr = reinterpret_cast<const T*>(m_arr.data());
-                return *ptr;
-            }
+  template <typename T>
+  requires(std::unsigned_integral<T> && sizeof(T) == N) T
+      to_integer_little_endian()
+  const {
+    auto ptr = reinterpret_cast<const T *>(m_arr.data());
+    return *ptr;
+  }
 
-            std::byte& operator [](std::size_t index)
-            {
-                return m_arr[index];
-            }
-            
-            std::byte operator [](std::size_t index) const
-            {
-                return m_arr[index];
-            }
+  std::byte &operator[](std::size_t index) { return m_arr[index]; }
 
-            void operator ^=(Bytes<N> const & b)
-            {
-                for (int i = 0; i < N; i++)
-                    m_arr[i]^=b[i];
-            }
+  std::byte operator[](std::size_t index) const { return m_arr[index]; }
 
-            template<std::size_t M>
-            constexpr bool operator==(Bytes<M> const &r) const
-            {
-                if ( N!=M )
-                    return false;
-                return m_arr == r.to_array();
-            }
+  void operator^=(Bytes<N> const &b) {
+    for (int i = 0; i < N; i++)
+      m_arr[i] ^= b[i];
+  }
 
-            constexpr bool operator==(std::vector<std::byte> const &r) const
-            {
-                if (N!=r.size())
-                    return false;
-                for (int i=0; i<N; ++i)
-                    if (m_arr[i] != r[i])
-                        return false;
-                return true;
-            }
+  template <std::size_t M> constexpr bool operator==(Bytes<M> const &r) const {
+    if (N != M)
+      return false;
+    return m_arr == r.to_array();
+  }
 
-            template <std::size_t M>
-            Bytes<N+M> operator+(Bytes<M> const &r) const
-            {
-                std::array<std::byte, N+M> ret;
-                std::copy(m_arr.cbegin(), m_arr.cend(), ret.begin());
-                std::copy(r.to_array().cbegin(), r.to_array().cend(), ret.begin() + N);
-                return Bytes<N+M>(ret);
-            }
+  constexpr bool operator==(std::vector<std::byte> const &r) const {
+    if (N != r.size())
+      return false;
+    for (int i = 0; i < N; ++i)
+      if (m_arr[i] != r[i])
+        return false;
+    return true;
+  }
 
-            static constexpr std::size_t ssz_size = N;
-            static constexpr std::size_t size() { return N; }
-            std::size_t get_ssz_size() const { return N; }
+  template <std::size_t M> Bytes<N + M> operator+(Bytes<M> const &r) const {
+    std::array<std::byte, N + M> ret;
+    std::copy(m_arr.cbegin(), m_arr.cend(), ret.begin());
+    std::copy(r.to_array().cbegin(), r.to_array().cend(), ret.begin() + N);
+    return Bytes<N + M>(ret);
+  }
 
-            constexpr typename std::array<std::byte, N>::iterator begin() noexcept
-            {
-                return m_arr.begin();
-            }
+  static constexpr std::size_t ssz_size = N;
+  static constexpr std::size_t size() { return N; }
+  std::size_t get_ssz_size() const { return N; }
 
-            constexpr typename std::array<std::byte, N>::const_iterator cbegin() const noexcept
-            {
-                return m_arr.cbegin();
-            }
+  constexpr typename std::array<std::byte, N>::iterator begin() noexcept {
+    return m_arr.begin();
+  }
 
-            constexpr typename std::array<std::byte, N>::iterator end() noexcept
-            {
-                return m_arr.end();
-            }
+  constexpr typename std::array<std::byte, N>::const_iterator
+  cbegin() const noexcept {
+    return m_arr.cbegin();
+  }
 
-            constexpr typename std::array<std::byte, N>::const_iterator cend() const noexcept
-            {
-                return m_arr.cend();
-            }
+  constexpr typename std::array<std::byte, N>::iterator end() noexcept {
+    return m_arr.end();
+  }
 
-            YAML::Node encode() const 
-            {
-                auto str = this->to_string();
-                return YAML::convert<std::string>::encode(str);
-            }
-            bool decode(const YAML::Node& node)
-            { 
-                std::string str;
-                if (!YAML::convert<std::string>::decode(node, str))
-                    return false;
-                this->from_string(str);
-                return true;
-            }
-    };
+  constexpr typename std::array<std::byte, N>::const_iterator
+  cend() const noexcept {
+    return m_arr.cend();
+  }
 
-    using Bytes1 = Bytes<1>;
-    using Bytes4 = Bytes<4>;
-    using Bytes8 = Bytes<8>;
-    using Bytes20 = Bytes<20>;
-    using Bytes32 = Bytes<32>;
-    using Bytes48 = Bytes<48>;
-    using Bytes96 = Bytes<96>;
+  YAML::Node encode() const {
+    auto str = this->to_string();
+    return YAML::convert<std::string>::encode(str);
+  }
+  bool decode(const YAML::Node &node) {
+    std::string str;
+    if (!YAML::convert<std::string>::decode(node, str))
+      return false;
+    this->from_string(str);
+    return true;
+  }
+};
 
-    using BytesVector = std::vector<std::byte>;
-}
+using Bytes1 = Bytes<1>;
+using Bytes4 = Bytes<4>;
+using Bytes8 = Bytes<8>;
+using Bytes20 = Bytes<20>;
+using Bytes32 = Bytes<32>;
+using Bytes48 = Bytes<48>;
+using Bytes96 = Bytes<96>;
+
+using BytesVector = std::vector<std::byte>;
+} // namespace eth

@@ -1,7 +1,7 @@
-/*  eth1data.hpp 
- * 
- *  This file is part of Mammon. 
- *  mammon is a greedy and selfish ETH consensus client. 
+/*  eth1data.hpp
+ *
+ *  This file is part of Mammon.
+ *  mammon is a greedy and selfish ETH consensus client.
  *
  *  Copyright (c) 2021 - Reimundo Heluani (potuz) potuz@potuz.net
  *
@@ -20,39 +20,34 @@
  */
 
 #pragma once
-#include "common/basic_types.hpp" 
+#include "common/basic_types.hpp"
 #include "ssz/ssz_container.hpp"
 #include "yaml-cpp/yaml.h"
 
-namespace eth
-{
-    struct Eth1Data : public ssz::Container
-    {
-        Root deposit_root;
-        Counter deposit_count;
-        Hash32  block_hash;
+namespace eth {
+struct Eth1Data : public ssz::Container {
+  Root deposit_root;
+  Counter deposit_count;
+  Hash32 block_hash;
 
-        static constexpr std::size_t ssz_size = 72;
-        std::size_t get_ssz_size() const { return ssz_size; } 
-        BytesVector serialize() const { return serialize_({&deposit_root, &deposit_count, &block_hash}); }
-        bool deserialize(ssz::SSZIterator it, ssz::SSZIterator end)
-        {
-            return deserialize_(it, end, {&deposit_root, &deposit_count, &block_hash}); 
-        }
-        YAML::Node encode() const
-        { 
-            return encode_({
-                    { "deposit_root", &deposit_root},
-                    { "deposit_count", &deposit_count},
-                    { "block_hash", &block_hash } });
-        }
+  static constexpr std::size_t ssz_size = 72;
+  std::size_t get_ssz_size() const { return ssz_size; }
+  BytesVector serialize() const {
+    return serialize_({&deposit_root, &deposit_count, &block_hash});
+  }
+  bool deserialize(ssz::SSZIterator it, ssz::SSZIterator end) {
+    return deserialize_(it, end, {&deposit_root, &deposit_count, &block_hash});
+  }
+  YAML::Node encode() const {
+    return encode_({{"deposit_root", &deposit_root},
+                    {"deposit_count", &deposit_count},
+                    {"block_hash", &block_hash}});
+  }
 
-        bool decode(const YAML::Node& node) 
-        { 
-            return decode_(node, {
-                    { "deposit_root", &deposit_root},
-                    { "deposit_count", &deposit_count},
-                    { "block_hash", &block_hash } });
-        }
-    };
-}
+  bool decode(const YAML::Node &node) {
+    return decode_(node, {{"deposit_root", &deposit_root},
+                          {"deposit_count", &deposit_count},
+                          {"block_hash", &block_hash}});
+  }
+};
+} // namespace eth

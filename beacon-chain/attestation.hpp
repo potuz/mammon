@@ -1,7 +1,7 @@
-/*  attestation.hpp 
- * 
- *  This file is part of Mammon. 
- *  mammon is a greedy and selfish ETH consensus client. 
+/*  attestation.hpp
+ *
+ *  This file is part of Mammon.
+ *  mammon is a greedy and selfish ETH consensus client.
  *
  *  Copyright (c) 2021 - Reimundo Heluani (potuz) potuz@potuz.net
  *
@@ -21,147 +21,122 @@
 
 #pragma once
 
-#include "common/containers.hpp"
 #include "common/bitlist.hpp"
+#include "common/containers.hpp"
 #include "yaml-cpp/yaml.h"
 
-namespace eth
-{
-    struct AttestationData : public ssz::Container
-    {
-        Slot slot;
-        CommitteeIndex index;
+namespace eth {
+struct AttestationData : public ssz::Container {
+  Slot slot;
+  CommitteeIndex index;
 
-        Root beacon_block_root;
-        Checkpoint source, target;
+  Root beacon_block_root;
+  Checkpoint source, target;
 
-        static constexpr std::size_t ssz_size = 128;
-        std::size_t get_ssz_size() const { return ssz_size; } 
-        BytesVector serialize() const { return serialize_({&slot, &index, &beacon_block_root, &source, &target}); }
-        bool deserialize(ssz::SSZIterator it, ssz::SSZIterator end)
-        {
-            return deserialize_(it, end, {&slot, &index, &beacon_block_root, &source, &target}); 
-        }
+  static constexpr std::size_t ssz_size = 128;
+  std::size_t get_ssz_size() const { return ssz_size; }
+  BytesVector serialize() const {
+    return serialize_({&slot, &index, &beacon_block_root, &source, &target});
+  }
+  bool deserialize(ssz::SSZIterator it, ssz::SSZIterator end) {
+    return deserialize_(it, end,
+                        {&slot, &index, &beacon_block_root, &source, &target});
+  }
 
-        YAML::Node encode() const
-        { 
-            return encode_({
-                    { "slot", &slot },
-                    { "index", &index },
-                    { "beacon_block_root", &beacon_block_root },
-                    { "source", &source },
-                    { "target", &target } });
-        }
+  YAML::Node encode() const {
+    return encode_({{"slot", &slot},
+                    {"index", &index},
+                    {"beacon_block_root", &beacon_block_root},
+                    {"source", &source},
+                    {"target", &target}});
+  }
 
-        bool decode(const YAML::Node& node) 
-        { 
-            return decode_(node, {
-                    { "slot", &slot },
-                    { "index", &index },
-                    { "beacon_block_root", &beacon_block_root },
-                    { "source", &source },
-                    { "target", &target } });
-        }
-
-    };
-
-    struct IndexedAttestation : public ssz::Container
-    {
-        ListFixedSizedParts<ValidatorIndex> attesting_indices;
-        AttestationData data;
-        BLSSignature signature;
-
-        BytesVector serialize() const { return serialize_({&attesting_indices, &data, &signature}); }
-        bool deserialize(ssz::SSZIterator it, ssz::SSZIterator end)
-        {
-            return deserialize_(it, end, {&attesting_indices, &data, &signature});
-        }
-
-        YAML::Node encode() const
-        { 
-            return encode_({
-                    { "attesting_indices", &attesting_indices },
-                    { "data", &data },
-                    { "signature", &signature } });
-        }
-
-        bool decode(const YAML::Node& node) 
-        { 
-            return decode_(node, {
-                    { "attesting_indices", &attesting_indices },
-                    { "data", &data },
-                    { "signature", &signature } });
-        }
-
-    };
-
-    struct PendingAttestation : public ssz::Container
-    {
-        eth::Bitlist aggregation_bits;
-        AttestationData data;
-        Slot inclusion_delay;
-        ValidatorIndex proposer_index;
-
-        BytesVector serialize() const
-        {
-            return serialize_({&aggregation_bits, &data, &inclusion_delay, &proposer_index});
-        }
-        bool deserialize(ssz::SSZIterator it, ssz::SSZIterator end)
-        {
-            return deserialize_(it, end, {&aggregation_bits, &data, &inclusion_delay, &proposer_index});
-        }
-
-        YAML::Node encode() const
-        { 
-            return encode_({
-                    { "aggregation_bits", &aggregation_bits },
-                    { "data", &data },
-                    { "inclusion_delay", &inclusion_delay },
-                    { "proposer_index", &proposer_index} });
-        }
-
-        bool decode(const YAML::Node& node) 
-        { 
-            return decode_(node, {
-                    { "aggregation_bits", &aggregation_bits },
-                    { "data", &data },
-                    { "inclusion_delay", &inclusion_delay },
-                    { "proposer_index", &proposer_index} });
-        }
-
-    };
-
-    struct Attestation : public ssz::Container
-    {
-        eth::Bitlist aggregation_bits;
-        AttestationData data;
-        BLSSignature signature;
-
-        BytesVector serialize() const
-        {
-            return serialize_({&aggregation_bits, &data, &signature});
-        }
-        bool deserialize(ssz::SSZIterator it, ssz::SSZIterator end)
-        {
-            return deserialize_(it, end, {&aggregation_bits, &data, &signature});
-        }
-        YAML::Node encode() const
-        { 
-            return encode_({
-                    { "aggregation_bits", &aggregation_bits },
-                    { "data", &data },
-                    { "signature", &signature } });
-        }
-
-        bool decode(const YAML::Node& node) 
-        { 
-            return decode_(node, {
-                    { "aggregation_bits", &aggregation_bits },
-                    { "data", &data },
-                    { "signature", &signature } });
-        }
-
-    };
-            
+  bool decode(const YAML::Node &node) {
+    return decode_(node, {{"slot", &slot},
+                          {"index", &index},
+                          {"beacon_block_root", &beacon_block_root},
+                          {"source", &source},
+                          {"target", &target}});
+  }
 };
 
+struct IndexedAttestation : public ssz::Container {
+  ListFixedSizedParts<ValidatorIndex> attesting_indices;
+  AttestationData data;
+  BLSSignature signature;
+
+  BytesVector serialize() const {
+    return serialize_({&attesting_indices, &data, &signature});
+  }
+  bool deserialize(ssz::SSZIterator it, ssz::SSZIterator end) {
+    return deserialize_(it, end, {&attesting_indices, &data, &signature});
+  }
+
+  YAML::Node encode() const {
+    return encode_({{"attesting_indices", &attesting_indices},
+                    {"data", &data},
+                    {"signature", &signature}});
+  }
+
+  bool decode(const YAML::Node &node) {
+    return decode_(node, {{"attesting_indices", &attesting_indices},
+                          {"data", &data},
+                          {"signature", &signature}});
+  }
+};
+
+struct PendingAttestation : public ssz::Container {
+  eth::Bitlist aggregation_bits;
+  AttestationData data;
+  Slot inclusion_delay;
+  ValidatorIndex proposer_index;
+
+  BytesVector serialize() const {
+    return serialize_(
+        {&aggregation_bits, &data, &inclusion_delay, &proposer_index});
+  }
+  bool deserialize(ssz::SSZIterator it, ssz::SSZIterator end) {
+    return deserialize_(
+        it, end, {&aggregation_bits, &data, &inclusion_delay, &proposer_index});
+  }
+
+  YAML::Node encode() const {
+    return encode_({{"aggregation_bits", &aggregation_bits},
+                    {"data", &data},
+                    {"inclusion_delay", &inclusion_delay},
+                    {"proposer_index", &proposer_index}});
+  }
+
+  bool decode(const YAML::Node &node) {
+    return decode_(node, {{"aggregation_bits", &aggregation_bits},
+                          {"data", &data},
+                          {"inclusion_delay", &inclusion_delay},
+                          {"proposer_index", &proposer_index}});
+  }
+};
+
+struct Attestation : public ssz::Container {
+  eth::Bitlist aggregation_bits;
+  AttestationData data;
+  BLSSignature signature;
+
+  BytesVector serialize() const {
+    return serialize_({&aggregation_bits, &data, &signature});
+  }
+  bool deserialize(ssz::SSZIterator it, ssz::SSZIterator end) {
+    return deserialize_(it, end, {&aggregation_bits, &data, &signature});
+  }
+  YAML::Node encode() const {
+    return encode_({{"aggregation_bits", &aggregation_bits},
+                    {"data", &data},
+                    {"signature", &signature}});
+  }
+
+  bool decode(const YAML::Node &node) {
+    return decode_(node, {{"aggregation_bits", &aggregation_bits},
+                          {"data", &data},
+                          {"signature", &signature}});
+  }
+};
+
+}; // namespace eth

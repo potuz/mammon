@@ -1,7 +1,7 @@
-/*  ssz_container.hpp 
- * 
- *  This file is part of Mammon. 
- *  mammon is a greedy and selfish ETH consensus client. 
+/*  ssz_container.hpp
+ *
+ *  This file is part of Mammon.
+ *  mammon is a greedy and selfish ETH consensus client.
  *
  *  Copyright (c) 2021 - Reimundo Heluani (potuz) potuz@potuz.net
  *
@@ -20,48 +20,45 @@
  */
 
 #pragma once
-#include <vector>
+#include "yaml-cpp/yaml.h"
 #include <cstddef>
 #include <string>
-#include "yaml-cpp/yaml.h"
+#include <vector>
 
-namespace ssz
-{
-    class Container;
-    using Part = std::pair<std::string, Container*>;
-    using ConstPart = std::pair<std::string, const Container*>;
-    using SSZIterator = std::vector<std::byte>::iterator;
+namespace ssz {
+class Container;
+using Part = std::pair<std::string, Container *>;
+using ConstPart = std::pair<std::string, const Container *>;
+using SSZIterator = std::vector<std::byte>::iterator;
 
-    class Container
-    {
-        protected:
-            static std::vector<std::byte> serialize_(std::vector<const Container*>);
-            static bool deserialize_(SSZIterator it, SSZIterator end, std::vector<Container*>);
-            static YAML::Node encode_(std::vector<ConstPart> parts);
-            static bool decode_(const YAML::Node& node, std::vector<Part> parts);
+class Container {
+protected:
+  static std::vector<std::byte> serialize_(std::vector<const Container *>);
+  static bool deserialize_(SSZIterator it, SSZIterator end,
+                           std::vector<Container *>);
+  static YAML::Node encode_(const std::vector<ConstPart> &parts);
+  static bool decode_(const YAML::Node &node, std::vector<Part> parts);
 
-        public:
+public:
+  virtual ~Container() = default;
 
-            virtual ~Container() = default;
+  virtual std::size_t get_ssz_size() const { return 0; }
+  virtual std::vector<std::byte> serialize() const = 0;
+  virtual bool deserialize(SSZIterator it, SSZIterator end) = 0;
 
-            virtual std::size_t get_ssz_size() const { return 0; }
-            virtual std::vector<std::byte> serialize() const = 0;
-            virtual bool deserialize(SSZIterator it, SSZIterator end) = 0;
+  virtual YAML::Node encode() const = 0;
+  virtual bool decode(const YAML::Node &node) = 0;
+  bool operator==(const Container &) const { return true; }
+};
 
-            virtual YAML::Node encode() const = 0;
-            virtual bool decode(const YAML::Node& node) = 0; 
-            bool operator==(const Container&) const
-            {
-                return true;
-            }
-    };
+} // namespace ssz
 
-}
+template <class T>
+requires std::is_base_of<ssz::Container, T>::value
 
-template<class T> requires std::is_base_of<ssz::Container, T>::value
-
-struct YAML::convert<T>
-{
-    static YAML::Node encode(const ssz::Container& c) { return c.encode(); }
-    static bool decode(const YAML::Node& node, ssz::Container& c) { return c.decode(node); }
+    struct YAML::convert<T> {
+  static YAML::Node encode(const ssz::Container &c) { return c.encode(); }
+  static bool decode(const YAML::Node &node, ssz::Container &c) {
+    return c.decode(node);
+  }
 };
