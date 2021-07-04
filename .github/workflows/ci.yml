@@ -1,0 +1,43 @@
+name: CMake
+
+on:
+  push:
+    branches: [ $default-branch ]
+  pull_request:
+    branches: [ $default-branch ]
+
+env:
+  # Customize the CMake build type here (Release, Debug, RelWithDebInfo, etc.)
+  BUILD_TYPE: Release
+  MINIMAL: true
+  TIDY: true
+  CCX: clang
+  CC: clang
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Run Clang-Format
+      run: find ${{github.workspace}} -name "*.hpp" -o -name "*.cpp" | xargs clang-format -n --Werror
+
+    - name: Configure CMake
+      run: >
+        CC=${{env.CC}} CCX=${{env.CCX}} cmake -B ${{github.workspace}}/build
+        -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DMINIMAL=${{env.MINIMAL}}
+
+    - name: Build
+      # Build your program with the given configuration
+      run: scan-build cmake --build ${{github.workspace}}/build 
+
+    - name: Test
+      working-directory: ${{github.workspace}}/build
+      run: ctest
+
+    - name: Run cppcheck
+      run: >
+        cppcheck --enable-all --suppress=duplicateBranch --inline-suppr --inconclusive
+        --project=${{github.workspace}}/compile_commands.json --error-exitcode=1
