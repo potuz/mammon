@@ -36,7 +36,7 @@ public:
   constexpr Slot(std::uint64_t s = 0) : value_{s} {};
   operator std::uint64_t() const { return value_; };
   operator std::uint64_t &() { return value_; }
-  operator Bytes8() const { return value_; }
+  operator Bytes8() const { return Bytes8{value_}; }
   std::vector<std::byte> serialize() const override {
     return Bytes8(value_).serialize();
   }

@@ -29,7 +29,7 @@ namespace constants {
 
 const std::uint64_t MIN_GENESIS_ACTIVE_VALIDATOR_COUNT = 16384;
 const std::uint64_t MIN_GENESIS_TIME = 1606824000;
-const eth::Version GENESIS_FORK_VERSION = 0x00000000;
+const eth::Version GENESIS_FORK_VERSION{0x00000000};
 const std::uint64_t GENESIS_DELAY = 604800;
 
 // ALTAIR_FORK_VERSION: 0x01000001
@@ -52,11 +52,11 @@ const std::uint64_t CHURN_LIMIT_QUOTIENT = 65536;
 
 const int DEPOSIT_CHAIN_ID = 1;
 const int DEPOSIT_NETWORK_ID = 1;
-const eth::Eth1Address DEPOSIT_CONTRACT_ADDRESS =
-    "0x00000000219ab540356cBB839Cbe05303d7705Fa"s;
+const eth::Eth1Address DEPOSIT_CONTRACT_ADDRESS{
+    "0x00000000219ab540356cBB839Cbe05303d7705Fa"s};
 
-const std::string TEST_VECTORS_PATH =
-    "@CMAKE_SOURCE_DIR@/eth2.0-spec-tests/tests/mainnet/phase0/ssz_static/";
+const std::string TEST_VECTORS_PATH{
+    "@CMAKE_SOURCE_DIR@/eth2.0-spec-tests/tests/mainnet/phase0/ssz_static/"};
 
 constexpr int DEPOSIT_CONTRACT_TREE_DEPTH = 32;
 constexpr std::uint64_t JUSTIFICATION_BITS_LENGTH = 4;
