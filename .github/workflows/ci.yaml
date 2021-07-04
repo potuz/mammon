@@ -8,7 +8,6 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
-
     - name: Run static analysis
       uses: JacobDomagala/StaticAnalysis@master
       with:
@@ -17,6 +16,17 @@ jobs:
         cppcheck_args: --enable=all --suppress=duplicateBranch --inline-suppr --inconclusive --error-exitcode=1
         cmake_args: -DMINIMAL=true
 
-    - name: Run tests
-    - run: build/test_ssz
-    - run: build/test_bytes
+    - name: Build & Test
+      uses: ashutoshvarma/action-cmake-build@master
+      with:
+        build-dir: ${{ runner.workspace }}/build
+        # will set the CC & CXX for cmake
+        cc: clang
+        cxx: clang
+        build-type: Release
+        # Extra options pass to cmake while configuring project
+        configure-options: -DMINIMAL=true
+        run-test: true
+        install-build: false
+        # run build using '-j [parallel]' to use multiple threads to build
+        parallel: 2
