@@ -131,14 +131,13 @@ public:
 
   void from_string(std::string &hex) { m_arr = bytes_from_str(hex); }
 
-  template <typename T>
-  requires(std::unsigned_integral<T> && sizeof(T) == N) T
-      to_integer_little_endian()
-  const {
+  // clang-format off
+  template <typename T> requires(std::unsigned_integral<T> && sizeof(T) == N)
+  T to_integer_little_endian() const {
     auto ptr = reinterpret_cast<const T *>(m_arr.data()); // NOLINT
     return *ptr;
   }
-
+  // clang-format on
   std::byte &operator[](std::size_t index) { return m_arr[index]; }
 
   std::byte operator[](std::size_t index) const { return m_arr[index]; }
