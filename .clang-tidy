@@ -1,0 +1,5 @@
+Checks: 'bugprone-*,clan-analyzer-*,concurrency-*,cppcoreguidelines-*,performance-*,'
+WarningsAsErrors: '*'
+HeaderFilterRegex: '*'
+AnalyzeTemporaryDtors: false
+FormatStyle:     Google

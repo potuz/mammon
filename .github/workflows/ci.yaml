@@ -9,17 +9,10 @@ jobs:
     steps:
     - uses: actions/checkout@v2
 
-    - name: setup init_script
-      shell: bash
-      run: |
-        echo "#!/bin/bash
-        add-apt-repository ppa:oibaf/graphics-drivers
-        apt update
-        apt upgrade
-        apt install -y libvulkan1 mesa-vulkan-drivers vulkan-utils" > init_script.sh
-
     - name: Run static analysis
       uses: JacobDomagala/StaticAnalysis@master
       with:
         # Additional apt packages that need to be installed before running Cmake
-        apt_pckgs: yaml-cpp
+        apt_pckgs: libyaml-cpp-dev libsnappy-dev
+        cppcheck_args: --enable=all --suppress=duplicateBranch --inline-suppr --inconclusive --error-exitcode=1
+        cmake_args: -DMINIMAL=true

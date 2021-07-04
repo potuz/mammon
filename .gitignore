@@ -3,3 +3,4 @@ assets
 compile_commands.json
 include
 build
+.gitignore
