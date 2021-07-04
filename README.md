@@ -20,7 +20,7 @@ $ make test
 
 ## Setup
 
-format is [Google C++ Style Guide](https://google.github.io/styleguide/cppguide.html) enforced with `clang-format`. Code is checked with `clang-tidy` and `cppcheck` using [StaticAnalysis](https://github.com/JacobDomagala/StaticAnalysis)
+format is [Google C++ Style Guide](https://google.github.io/styleguide/cppguide.html) enforced with `clang-format`. Code is checked with `clang-tidy` and `cppcheck`. 
 
 I'm testing on Arch linux and compiling both with gcc and clang, using `C++20`. This repo is under `GPLv3` with the caveat that acutest is released under MIT license.
 
