@@ -35,9 +35,9 @@ public:
   Boolean(bool s = false) : value_{s} {};
   operator bool() const { return value_; };
   operator bool &() { return value_; }
-  operator Bytes<1>() const { return char(value_); }
+  operator Bytes1() const { return Bytes1{char(value_)}; }
   std::vector<std::byte> serialize() const override {
-    return Bytes<1>(value_).serialize();
+    return Bytes1(value_).serialize();
   }
   bool deserialize(ssz::SSZIterator it, ssz::SSZIterator end) override {
     if (std::distance(it, end) != 1)

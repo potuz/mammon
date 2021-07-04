@@ -37,7 +37,7 @@ public:
   static constexpr std::size_t ssz_size = N * T::ssz_size;
   std::size_t get_ssz_size() const override { return ssz_size; }
 
-  std::size_t size(void) const { return N; }
+  static std::size_t size(void) { return N; }
 
   constexpr typename std::array<T, N>::iterator begin() noexcept {
     return m_arr.begin();
@@ -181,17 +181,17 @@ public:
       return true;
     if (std::distance(it, end) < constants::BYTES_PER_LENGTH_OFFSET)
       return false;
-    auto begin = it;
+    auto start = it;
     auto first_offset = helpers::to_integer_little_endian<std::uint32_t>(&*it);
     if (first_offset < constants::BYTES_PER_LENGTH_OFFSET)
       return false;
-    if (std::distance(begin, end) < first_offset)
+    if (std::distance(start, end) < first_offset)
       return false;
     auto last_offset = first_offset;
     it += constants::BYTES_PER_LENGTH_OFFSET;
 
-    while (it != begin + first_offset) {
-      if (std::distance(begin, it) + constants::BYTES_PER_LENGTH_OFFSET >
+    while (it != start + first_offset) {
+      if (std::distance(start, it) + constants::BYTES_PER_LENGTH_OFFSET >
           first_offset)
         return false;
 
@@ -199,17 +199,17 @@ public:
           helpers::to_integer_little_endian<std::uint32_t>(&*it);
       if (current_offset < last_offset)
         return false;
-      if (std::distance(begin, end) < current_offset)
+      if (std::distance(start, end) < current_offset)
         return false;
       T obj;
-      if (!obj.deserialize(begin + last_offset, begin + current_offset))
+      if (!obj.deserialize(start + last_offset, start + current_offset))
         return false;
       m_arr.push_back(obj);
       last_offset = current_offset;
       it += constants::BYTES_PER_LENGTH_OFFSET;
     }
     T obj;
-    if (!obj.deserialize(begin + last_offset, end))
+    if (!obj.deserialize(start + last_offset, end))
       return false;
     m_arr.push_back(obj);
     return true;

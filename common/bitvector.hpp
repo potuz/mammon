@@ -40,9 +40,9 @@ public:
       (N + constants::BITS_PER_BYTE - 1) / constants::BITS_PER_BYTE;
   std::size_t get_ssz_size() const override { return ssz_size; }
 
-  Bitvector(std::array<bool, N> vec) : m_arr{vec} {};
+  explicit Bitvector(std::array<bool, N> vec) : m_arr{vec} {};
   template <typename... T>
-  Bitvector(T &&...l) : m_arr{{std::forward<T>(l)...}} {};
+  explicit Bitvector(T &&...l) : m_arr{{std::forward<T>(l)...}} {};
 
   void from_hexstring(std::string str) {
     if (!str.starts_with("0x"))

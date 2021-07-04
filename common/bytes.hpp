@@ -41,7 +41,7 @@ private:
   // The caller must check that the integral value fits in the array.
   constexpr static auto bytes_from_int(std::integral auto value)
       -> std::array<std::byte, N> {
-    std::array<std::byte, N> ret_arr = {};
+    std::array<std::byte, N> ret_arr{};
     if constexpr (std::endian::native == std::endian::big) {
       std::memcpy(ret_arr.data() + N - 1 - sizeof(value), &value,
                   sizeof(value));
@@ -61,7 +61,8 @@ private:
     return std::byte(x);
   }
 
-  static auto bytes_from_str(std::string &str) -> std::array<std::byte, N> {
+  template <typename T>
+  static auto bytes_from_str(T &&str) -> std::array<std::byte, N> {
     if (!str.starts_with("0x"))
       throw std::invalid_argument("string not prepended with 0x");
 
@@ -73,7 +74,7 @@ private:
     if (str.size() % 2 == 1)
       str.insert(0, "0");
 
-    std::array<std::byte, N> ret_arr = {};
+    std::array<std::byte, N> ret_arr{};
     for (int i = 0; i < str.size(); i += 2)
       ret_arr[i / 2] = chars_to_byte(str.substr(i, 2));
     return ret_arr;
@@ -81,17 +82,20 @@ private:
 
 public:
   Bytes() : m_arr{} {};
-  Bytes(std::string hex) : m_arr{bytes_from_str(hex)} {};
-  Bytes(std::integral auto value) requires(sizeof(value) <= N)
+  explicit Bytes(std::string &hex) : m_arr{bytes_from_str(hex)} {};
+  explicit Bytes(std::string &&hex)
+      : m_arr{bytes_from_str(std::forward<std::string>(hex))} {};
+  explicit Bytes(std::integral auto value) requires(sizeof(value) <= N)
       : m_arr{bytes_from_int(value)} {};
-  Bytes(std::array<std::byte, N> arr) : m_arr{arr} {};
-  Bytes(std::vector<std::byte> arr) {
+  explicit Bytes(std::array<std::byte, N> arr) : m_arr{arr} {};
+  explicit Bytes(std::vector<std::byte> arr) {
     if (arr.size() != N)
       throw std::out_of_range("vector of different size than bytes");
     std::copy_n(arr.begin(), N, m_arr.begin());
   }
   template <typename... T> // is_convertible_v<..,std::byte> fails.
-  Bytes(T &&...l) : m_arr{{std::forward<std::byte>(std::byte(l))...}} {};
+  explicit Bytes(T &&...l)
+      : m_arr{{std::forward<std::byte>(std::byte(l))...}} {};
 
   std::vector<std::byte> serialize() const override {
     std::vector<std::byte> ret(m_arr.cbegin(), m_arr.cend());
@@ -125,7 +129,7 @@ public:
     return os.str();
   };
 
-  void from_string(std::string hex) { m_arr = bytes_from_str(hex); }
+  void from_string(std::string &hex) { m_arr = bytes_from_str(hex); }
 
   template <typename T>
   requires(std::unsigned_integral<T> && sizeof(T) == N) T
