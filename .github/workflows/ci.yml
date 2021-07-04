@@ -1,4 +1,4 @@
-name: CMake
+name: CI
 
 on: [pull_request]
 
@@ -8,7 +8,6 @@ env:
   MINIMAL: true
   TIDY: true
   CCX: clang
-  CC: clang
 
 jobs:
   build:
@@ -20,10 +19,15 @@ jobs:
     - name: Run Clang-Format
       working-directory: ${{github.workspace}}
       run: find ${{github.workspace}} -name "*.hpp" -o -name "*.cpp" | xargs clang-format -n --Werror
+    
+    - name: Dowload nedded packages
+      run: |
+        sudo apt update
+        sudo apt-get install -y clang clang-tools libyaml-cpp-dev libsnappy-dev
 
     - name: Configure CMake
       run: >
-        CC=${{env.CC}} CCX=${{env.CCX}} cmake -B ${{github.workspace}}/build
+        cmake -B ${{github.workspace}}/build -DCMAKE_CXX_COMPILER=${{env.CCX}}
         -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DMINIMAL=${{env.MINIMAL}}
 
     - name: Build

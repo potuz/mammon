@@ -55,12 +55,13 @@ public:
 
 } // namespace ssz
 
+// clang-format off
 template <class T>
 requires std::is_base_of<ssz::Container, T>::value
-
-    struct YAML::convert<T> {
+struct YAML::convert<T> {
   static YAML::Node encode(const ssz::Container &c) { return c.encode(); }
   static bool decode(const YAML::Node &node, ssz::Container &c) {
     return c.decode(node);
   }
 };
+// clang-format on
