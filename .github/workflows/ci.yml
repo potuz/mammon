@@ -1,0 +1,44 @@
+name: CI
+
+on: [pull_request]
+
+env:
+  # Customize the CMake build type here (Release, Debug, RelWithDebInfo, etc.)
+  BUILD_TYPE: Release
+  MINIMAL: true
+  TIDY: true
+  CCX: clang
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Run Clang-Format
+      working-directory: ${{github.workspace}}
+      run: find ${{github.workspace}} find . -name "*.hpp" -o -name "*.cpp" ! -path "${{github.workspace}}/build/CMakeFiles/*" | xargs clang-format -n --Werror
+
+    - name: Dowload nedded packages
+      run: |
+        sudo apt update
+        sudo apt-get install -y cppcheck clang clang-tools libyaml-cpp-dev libsnappy-dev
+
+    - name: Configure CMake
+      run: >
+        cmake -B ${{github.workspace}}/build -DCMAKE_CXX_COMPILER=${{env.CCX}}
+        -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DMINIMAL=${{env.MINIMAL}}
+
+    - name: Build
+      # Build your program with the given configuration
+      run: scan-build cmake --build ${{github.workspace}}/build 
+
+    - name: Test
+      working-directory: ${{github.workspace}}/build
+      run: ctest
+
+    - name: Run cppcheck
+      run: >
+        cppcheck --enable=all --suppress=duplicateBranch --inline-suppr --inconclusive
+        --project=${{github.workspace}}/build/compile_commands.json --error-exitcode=1

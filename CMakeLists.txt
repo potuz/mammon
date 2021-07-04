@@ -5,7 +5,6 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
 set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -lstdc++")
-#set(CMAKE_CXX_CLANG_TIDY "clang-tidy")
 
 set( CMAKE_EXPORT_COMPILE_COMMANDS ON ) #youcompleteme
 set( CMAKE_INCLUDE_CURRENT_DIR ON)
@@ -29,6 +28,12 @@ if(MINIMAL)
 else()
 	message(STATUS "Running mainnet config")
 	configure_file(config/mainnet.hpp.in include/config.hpp)
+endif()
+
+option(TIDY "Analyze the code with clang-tidy")
+if(TIDY)
+	message(STATUS "Building with clang-tidy")
+	set(CMAKE_CXX_CLANG_TIDY "clang-tidy")
 endif()
 
 add_executable (beacon-chain
