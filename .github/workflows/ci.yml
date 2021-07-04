@@ -23,7 +23,7 @@ jobs:
     - name: Dowload nedded packages
       run: |
         sudo apt update
-        sudo apt-get install -y clang clang-tools libyaml-cpp-dev libsnappy-dev
+        sudo apt-get install -y cppcheck clang clang-tools libyaml-cpp-dev libsnappy-dev
 
     - name: Configure CMake
       run: >
@@ -41,4 +41,4 @@ jobs:
     - name: Run cppcheck
       run: >
         cppcheck --enable=all --suppress=duplicateBranch --inline-suppr --inconclusive
-        --project=${{github.workspace}}/compile_commands.json --error-exitcode=1
+        --project=${{github.workspace}}/build/compile_commands.json --error-exitcode=1
