@@ -8,7 +8,6 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
-
     - name: Run static analysis
       uses: JacobDomagala/StaticAnalysis@master
       with:
@@ -16,7 +15,3 @@ jobs:
         apt_pckgs: libyaml-cpp-dev libsnappy-dev
         cppcheck_args: --enable=all --suppress=duplicateBranch --inline-suppr --inconclusive --error-exitcode=1
         cmake_args: -DMINIMAL=true
-
-    - name: Run tests
-    - run: build/test_ssz
-    - run: build/test_bytes
