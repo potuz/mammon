@@ -15,3 +15,4 @@ jobs:
         # Additional apt packages that need to be installed before running Cmake
         apt_pckgs: libyaml-cpp-dev libsnappy-dev
         cppcheck_args: --enable=all --suppress=duplicateBranch --inline-suppr --inconclusive --error-exitcode=1
+        cmake_args: -DMINIMAL=true

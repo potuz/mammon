@@ -28,7 +28,8 @@
 #include <stdexcept>
 
 template <typename T>
-std::uint32_t compute_fixed_length(const std::vector<T *> parts) {
+std::uint32_t compute_fixed_length(const std::vector<T *> &parts) 
+{
   std::uint32_t ret = 0;
   auto sum_lengths = [&ret](const T *part) {
     if (part->get_ssz_size() == 0) {
