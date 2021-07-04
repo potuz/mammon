@@ -61,28 +61,23 @@ private:
     return std::byte(x);
   }
 
-  template <typename T>
-  static auto bytes_from_str(T &&str) -> std::array<std::byte, N> {
+  static auto bytes_from_str(const std::string &str)
+      -> std::array<std::byte, N> {
     if (!str.starts_with("0x"))
       throw std::invalid_argument("string not prepended with 0x");
 
-    str.erase(0, 2);
-
-    if (str.size() > 2 * N)
+    if (str.size() > 2 * N + 2)
       throw std::out_of_range("integer larger than bytes size");
 
-    if (str.size() % 2 == 1)
-      str.insert(0, "0");
-
     std::array<std::byte, N> ret_arr{};
-    for (int i = 0; i < str.size(); i += 2)
-      ret_arr[i / 2] = chars_to_byte(str.substr(i, 2));
+    for (int i = 2; i < str.size(); i += 2)
+      ret_arr[i / 2 - 1] = chars_to_byte(str.substr(i, 2));
     return ret_arr;
   }
 
 public:
   Bytes() : m_arr{} {};
-  explicit Bytes(std::string &hex) : m_arr{bytes_from_str(hex)} {};
+  explicit Bytes(const std::string &hex) : m_arr{bytes_from_str(hex)} {};
   explicit Bytes(std::string &&hex)
       : m_arr{bytes_from_str(std::forward<std::string>(hex))} {};
   explicit Bytes(std::integral auto value) requires(sizeof(value) <= N)
@@ -129,7 +124,7 @@ public:
     return os.str();
   };
 
-  void from_string(std::string &hex) { m_arr = bytes_from_str(hex); }
+  void from_string(const std::string &hex) { m_arr = bytes_from_str(hex); }
 
   // clang-format off
   template <typename T> requires(std::unsigned_integral<T> && sizeof(T) == N)

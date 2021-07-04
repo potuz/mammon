@@ -25,6 +25,7 @@
 #include "helpers/bytes_to_int.hpp"
 #include "ssz/ssz_container.hpp"
 #include "yaml-cpp/yaml.h"
+#include <cstdint>
 
 namespace eth {
 class Boolean : public ssz::Container {
@@ -35,7 +36,7 @@ public:
   Boolean(bool s = false) : value_{s} {};
   operator bool() const { return value_; };
   operator bool &() { return value_; }
-  operator Bytes1() const { return Bytes1{char(value_)}; }
+  operator Bytes1() const { return Bytes1{std::uint8_t(value_)}; }
   std::vector<std::byte> serialize() const override {
     return Bytes1(value_).serialize();
   }
