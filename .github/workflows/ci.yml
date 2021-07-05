@@ -23,7 +23,7 @@ jobs:
     - name: Dowload nedded packages
       run: |
         sudo apt update
-        sudo apt-get install -y cppcheck clang-12 clang-tools-12 libyaml-cpp-dev libsnappy-dev
+        sudo apt-get install -y cppcheck clang-12 libyaml-cpp-dev libsnappy-dev
 
     - name: Configure CMake
       run: >
@@ -32,7 +32,7 @@ jobs:
 
     - name: Build
       # Build your program with the given configuration
-      run: scan-build cmake --build ${{github.workspace}}/build 
+      run: cmake --build ${{github.workspace}}/build 
 
     - name: Test
       working-directory: ${{github.workspace}}/build
