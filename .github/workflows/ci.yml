@@ -7,7 +7,7 @@ env:
   BUILD_TYPE: Release
   MINIMAL: true
   TIDY: true
-  CCX: clang
+  CCX: clang-12
 
 jobs:
   build:
