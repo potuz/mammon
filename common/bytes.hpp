@@ -21,6 +21,7 @@
 
 #pragma once
 
+#include "helpers/bytes_to_int.hpp"
 #include "ssz/ssz_container.hpp"
 #include "yaml-cpp/yaml.h"
 #include <array>
@@ -38,30 +39,18 @@ template <std::size_t N> class Bytes : public ssz::Container {
 private:
   std::array<std::byte, N> m_arr;
 
-  // The caller must check that the integral value fits in the array.
-  constexpr static auto bytes_from_int(std::integral auto value)
-      -> std::array<std::byte, N> {
-    std::array<std::byte, N> ret_arr{};
-    if constexpr (std::endian::native == std::endian::big) {
-      std::memcpy(ret_arr.data() + N - 1 - sizeof(value), &value,
-                  sizeof(value));
-      std::reverse(ret_arr.begin(), ret_arr.end());
-    }
-    // We assume if it's not big endian we are little endian
-    else {
-      std::memcpy(ret_arr.data(), &value, sizeof(value));
-    }
-    return ret_arr;
-  }
-  static auto chars_to_byte(std::string const &c) -> std::byte {
-    unsigned int x = 0;
-    std::stringstream ss;
-    ss << std::hex << c;
-    ss >> x;
-    return std::byte(x);
+  // cppcheck-suppress unusedPrivateFunction
+  static constexpr auto bytes_from_int(const std::integral auto value) {
+    auto ret = std::bit_cast<std::array<std::byte,N>>(value);
+    if constexpr (std::endian::native == std::endian::big) std::reverse(ret);
+    return ret;
   }
 
-  static auto bytes_from_str(const std::string &str)
+  static constexpr auto chars_to_byte(std::string_view const &c) -> std::byte {
+    return std::byte(helpers::strhex2int(c));
+  }
+
+  static constexpr auto bytes_from_str(const std::string_view &str)
       -> std::array<std::byte, N> {
     if (!str.starts_with("0x"))
       throw std::invalid_argument("string not prepended with 0x");
@@ -77,20 +66,22 @@ private:
 
 public:
   Bytes() : m_arr{} {};
-  explicit Bytes(const std::string &hex) : m_arr{bytes_from_str(hex)} {};
-  explicit Bytes(std::string &&hex)
-      : m_arr{bytes_from_str(std::forward<std::string>(hex))} {};
-  explicit Bytes(std::integral auto value) requires(sizeof(value) <= N)
-      : m_arr{bytes_from_int(value)} {};
-  explicit Bytes(std::array<std::byte, N> arr) : m_arr{arr} {};
-  explicit Bytes(std::vector<std::byte> arr) {
+  explicit constexpr Bytes(const std::string_view &hex) : m_arr{bytes_from_str(hex)} {};
+  explicit constexpr Bytes(std::string_view &&hex)
+      : m_arr{bytes_from_str(std::forward<std::string_view>(hex))} {};
+  explicit constexpr Bytes(const std::integral auto value) requires(sizeof(value) <= N)
+      : m_arr{ bytes_from_int(value) } {}; 
+  explicit constexpr Bytes(std::array<std::byte, N> arr) : m_arr{arr} {};
+  explicit constexpr Bytes(const std::vector<int>& arr) {
     if (arr.size() != N)
       throw std::out_of_range("vector of different size than bytes");
-    std::copy_n(arr.begin(), N, m_arr.begin());
+    for (int i = 0; i < N; ++i) m_arr[i] = std::byte(arr[i]);
   }
-  template <typename... T> // is_convertible_v<..,std::byte> fails.
-  explicit Bytes(T &&...l)
-      : m_arr{{std::forward<std::byte>(std::byte(l))...}} {};
+  explicit constexpr Bytes(const std::vector<std::byte>& arr) {
+    if (arr.size() != N)
+      throw std::out_of_range("vector of different size than bytes");
+    std::copy_n(arr.cbegin(), N, m_arr.begin());
+  }
 
   std::vector<std::byte> serialize() const override {
     std::vector<std::byte> ret(m_arr.cbegin(), m_arr.cend());

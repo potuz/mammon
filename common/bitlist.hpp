@@ -31,8 +31,6 @@ private:
   std::vector<bool> m_arr;
 
 public:
-  template <typename... T>
-  explicit Bitlist(T &&...l) : m_arr{{std::forward<T>(l)...}} {};
 
   friend std::ostream &operator<<(std::ostream &os, const Bitlist &m_bits) {
     for (auto const &b : m_bits.m_arr)

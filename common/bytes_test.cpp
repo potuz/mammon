@@ -25,26 +25,26 @@
 
 void test_bytes_from_int() {
   eth::Bytes4 got(std::uint32_t(0x10203040));   // NOLINT
-  eth::Bytes4 expected{0x40, 0x30, 0x20, 0x10}; // NOLINT
+  eth::Bytes4 expected({0x40, 0x30, 0x20, 0x10}); // NOLINT
   TEST_CHECK(expected == got);                  // NOLINT
 
-  eth::Bytes8 got2(std::uint32_t(0x10203040));                       // NOLINT
-  eth::Bytes8 expected2{0x40, 0x30, 0x20, 0x10, 0x0, 0x0, 0x0, 0x0}; // NOLINT
+  eth::Bytes8 got2(std::uint64_t(0x10203040));                       // NOLINT
+  eth::Bytes8 expected2({0x40, 0x30, 0x20, 0x10, 0x0, 0x0, 0x0, 0x0}); // NOLINT
   TEST_CHECK(expected2 == got2);                                     // NOLINT
 }
 
 void test_bytes_to_integer_little_endian() {
-  eth::Bytes1 got{0x0a};       // NOLINT
+  eth::Bytes1 got{std::uint8_t(0x0a)};       // NOLINT
   std::uint8_t expected{0x0a}; // NOLINT
   // NOLINTNEXTLINE
   TEST_CHECK(expected == got.to_integer_little_endian<std::uint8_t>());
 
-  eth::Bytes4 got2{0x40, 0x30, 0x20, 0x10}; // NOLINT
+  eth::Bytes4 got2({0x40, 0x30, 0x20, 0x10}); // NOLINT
   std::uint32_t expected2{0x10203040};      // NOLINT
   // NOLINTNEXTLINE
   TEST_CHECK(expected2 == got2.to_integer_little_endian<std::uint32_t>());
 
-  eth::Bytes8 got3{0x40, 0x30, 0x20, 0x10, 0x0, 0x0, 0x0, 0x0}; // NOLINT
+  eth::Bytes8 got3({0x40, 0x30, 0x20, 0x10, 0x0, 0x0, 0x0, 0x0}); // NOLINT
   std::uint64_t expected3 = expected2;
   // NOLINTNEXTLINE
   TEST_CHECK(expected3 == got3.to_integer_little_endian<std::uint64_t>());
