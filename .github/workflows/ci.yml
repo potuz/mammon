@@ -23,7 +23,7 @@ jobs:
     - name: Dowload nedded packages
       run: |
         sudo apt update
-        sudo apt-get install -y cppcheck clang clang-tools libyaml-cpp-dev libsnappy-dev
+        sudo apt-get install -y cppcheck clang-12 clang-tools-12 libyaml-cpp-dev libsnappy-dev
 
     - name: Configure CMake
       run: >
