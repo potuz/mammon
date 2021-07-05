@@ -18,7 +18,7 @@ jobs:
 
     - name: Run Clang-Format
       working-directory: ${{github.workspace}}
-      run: find ${{github.workspace}} find . -name "*.hpp" -o -name "*.cpp" ! -path "${{github.workspace}}/build/CMakeFiles/*" | xargs clang-format -n --Werror
+      run: find ${{github.workspace}} -name "*.hpp" -o -name "*.cpp" ! -path "${{github.workspace}}/build/CMakeFiles/*" | xargs clang-format -n --Werror
 
     - name: Dowload nedded packages
       run: |
