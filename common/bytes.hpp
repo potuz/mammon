@@ -43,7 +43,7 @@ class Bytes : public ssz::Container {
 
     // cppcheck-suppress unusedPrivateFunction
     static constexpr auto bytes_from_int(const std::integral auto value) {
-        auto ret = std::bit_cast<std::array<std::byte, N>>(value);
+        auto ret = std::bit_cast<std::array<std::byte, N>>(value);  // NOLINT
         if constexpr (std::endian::native == std::endian::big) std::reverse(ret);
         return ret;
     }
