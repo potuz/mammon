@@ -45,4 +45,4 @@ using BLSPubkey = Bytes48;
 using BLSSignature = Bytes96;
 
 using Eth1Address = Bytes20;
-} // namespace eth
+}  // namespace eth

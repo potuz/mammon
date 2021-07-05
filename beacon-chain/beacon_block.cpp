@@ -20,53 +20,39 @@
  */
 
 #include "beacon_block.hpp"
+
 #include "ssz/ssz.hpp"
 
 namespace eth {
 // cppcheck-suppress unusedFunction
-void BeaconBlockBody::randao_reveal(BLSSignature &&s) {
-  randao_reveal_ = std::move(s);
-}
+void BeaconBlockBody::randao_reveal(BLSSignature &&s) { randao_reveal_ = std::move(s); }
 // cppcheck-suppress unusedFunction
-void BeaconBlockBody::eth1_data(Eth1Data &&data) {
-  eth1_data_ = std::move(data);
-}
+void BeaconBlockBody::eth1_data(Eth1Data &&data) { eth1_data_ = std::move(data); }
 // cppcheck-suppress unusedFunction
 void BeaconBlockBody::graffiti(Bytes32 &&g) { graffiti_ = std::move(g); }
 // cppcheck-suppress unusedFunction
-void BeaconBlockBody::proposer_slashings(
-    ListFixedSizedParts<ProposerSlashing> &&p) {
-  proposer_slashings_ = std::move(p);
+void BeaconBlockBody::proposer_slashings(ListFixedSizedParts<ProposerSlashing> &&p) {
+    proposer_slashings_ = std::move(p);
 }
 // cppcheck-suppress unusedFunction
-void BeaconBlockBody::attester_slashings(
-    ListVariableSizedParts<AttesterSlashing> &&a) {
-  attester_slashings_ = std::move(a);
+void BeaconBlockBody::attester_slashings(ListVariableSizedParts<AttesterSlashing> &&a) {
+    attester_slashings_ = std::move(a);
 }
 // cppcheck-suppress unusedFunction
-void BeaconBlockBody::attestations(ListVariableSizedParts<Attestation> &&a) {
-  attestations_ = std::move(a);
-}
+void BeaconBlockBody::attestations(ListVariableSizedParts<Attestation> &&a) { attestations_ = std::move(a); }
 // cppcheck-suppress unusedFunction
-void BeaconBlockBody::deposits(ListFixedSizedParts<Deposit> &&d) {
-  deposits_ = std::move(d);
-}
+void BeaconBlockBody::deposits(ListFixedSizedParts<Deposit> &&d) { deposits_ = std::move(d); }
 // cppcheck-suppress unusedFunction
-void BeaconBlockBody::voluntary_exits(
-    ListFixedSizedParts<SignedVoluntaryExit> &&s) {
-  voluntary_exits_ = std::move(s);
-}
+void BeaconBlockBody::voluntary_exits(ListFixedSizedParts<SignedVoluntaryExit> &&s) { voluntary_exits_ = std::move(s); }
 
 // cppcheck-suppress unusedFunction
 void BeaconBlock::slot(Slot &&s) { slot_ = s; }
 // cppcheck-suppress unusedFunction
-void BeaconBlock::proposer_index(ValidatorIndex &&idx) {
-  proposer_index_ = idx;
-}
+void BeaconBlock::proposer_index(ValidatorIndex &&idx) { proposer_index_ = idx; }
 // cppcheck-suppress unusedFunction
 void BeaconBlock::parent_root(Root &&r) { parent_root_ = std::move(r); }
 // cppcheck-suppress unusedFunction
 void BeaconBlock::state_root(Root &&r) { state_root_ = std::move(r); }
 // cppcheck-suppress unusedFunction
 void BeaconBlock::body(BeaconBlockBody &&b) { body_ = std::move(b); }
-} // namespace eth
+}  // namespace eth

@@ -21,45 +21,38 @@
 
 #pragma once
 
+#include <cstdint>
+
 #include "common/bytes.hpp"
 #include "helpers/bytes_to_int.hpp"
 #include "ssz/ssz_container.hpp"
 #include "yaml-cpp/yaml.h"
-#include <cstdint>
 
 namespace eth {
 class Boolean : public ssz::Container {
-private:
-  bool value_;
+   private:
+    bool value_;
 
-public:
-  Boolean(bool s = false) : value_{s} {};
-  operator bool() const { return value_; };
-  operator bool &() { return value_; }
-  operator Bytes1() const { return Bytes1{std::uint8_t(value_)}; }
-  std::vector<std::byte> serialize() const override {
-    return Bytes1(value_).serialize();
-  }
-  bool deserialize(ssz::SSZIterator it, ssz::SSZIterator end) override {
-    if (std::distance(it, end) != 1)
-      return false;
-    auto muint = helpers::to_integer_little_endian<std::uint8_t>(&*it);
-    if (muint > 1)
-      return false;
-    value_ = bool(muint);
-    return true;
-  }
+   public:
+    Boolean(bool s = false) : value_{s} {};
+    operator bool() const { return value_; };
+    operator bool &() { return value_; }
+    operator Bytes1() const { return Bytes1{std::uint8_t(value_)}; }
+    std::vector<std::byte> serialize() const override { return Bytes1(value_).serialize(); }
+    bool deserialize(ssz::SSZIterator it, ssz::SSZIterator end) override {
+        if (std::distance(it, end) != 1) return false;
+        auto muint = helpers::to_integer_little_endian<std::uint8_t>(&*it);
+        if (muint > 1) return false;
+        value_ = bool(muint);
+        return true;
+    }
 
-  bool operator==(const Boolean &) const = default;
+    bool operator==(const Boolean &) const = default;
 
-  static constexpr std::size_t ssz_size = 1;
-  std::size_t get_ssz_size() const override { return ssz_size; }
+    static constexpr std::size_t ssz_size = 1;
+    std::size_t get_ssz_size() const override { return ssz_size; }
 
-  YAML::Node encode() const override {
-    return YAML::convert<bool>::encode(value_);
-  }
-  bool decode(const YAML::Node &node) override {
-    return YAML::convert<bool>::decode(node, value_);
-  }
+    YAML::Node encode() const override { return YAML::convert<bool>::encode(value_); }
+    bool decode(const YAML::Node &node) override { return YAML::convert<bool>::decode(node, value_); }
 };
-} // namespace eth
+}  // namespace eth

@@ -30,294 +30,228 @@ namespace eth
 {
 template <class T, std::size_t N>
 class VectorFixedSizedParts : public ssz::Container {
-private:
-  std::array<T, N> m_arr;
+   private:
+    std::array<T, N> m_arr;
 
-public:
-  static constexpr std::size_t ssz_size = N * T::ssz_size;
-  std::size_t get_ssz_size() const override { return ssz_size; }
+   public:
+    static constexpr std::size_t ssz_size = N * T::ssz_size;
+    std::size_t get_ssz_size() const override { return ssz_size; }
 
-  static std::size_t size(void) { return N; }
+    static std::size_t size(void) { return N; }
 
-  constexpr typename std::array<T, N>::iterator begin() noexcept {
-    return m_arr.begin();
-  }
+    constexpr typename std::array<T, N>::iterator begin() noexcept { return m_arr.begin(); }
 
-  constexpr typename std::array<T, N>::const_iterator cbegin() const noexcept {
-    return m_arr.cbegin();
-  }
+    constexpr typename std::array<T, N>::const_iterator cbegin() const noexcept { return m_arr.cbegin(); }
 
-  constexpr typename std::array<T, N>::iterator end() noexcept {
-    return m_arr.end();
-  }
+    constexpr typename std::array<T, N>::iterator end() noexcept { return m_arr.end(); }
 
-  constexpr typename std::array<T, N>::const_iterator cend() const noexcept {
-    return m_arr.cend();
-  }
+    constexpr typename std::array<T, N>::const_iterator cend() const noexcept { return m_arr.cend(); }
 
-  BytesVector serialize() const override {
-    BytesVector ret;
-    for (auto part : m_arr) {
-      auto part_ssz = part.serialize();
-      ret.insert(ret.end(), part_ssz.begin(), part_ssz.end());
+    BytesVector serialize() const override {
+        BytesVector ret;
+        for (auto part : m_arr) {
+            auto part_ssz = part.serialize();
+            ret.insert(ret.end(), part_ssz.begin(), part_ssz.end());
+        }
+        return ret;
     }
-    return ret;
-  }
 
-  bool deserialize(ssz::SSZIterator it, ssz::SSZIterator end) override {
-    if (std::distance(it, end) != ssz_size)
-      return false;
+    bool deserialize(ssz::SSZIterator it, ssz::SSZIterator end) override {
+        if (std::distance(it, end) != ssz_size) return false;
 
-    for (int i = 0; i < N; ++i)
-      if (!m_arr[i].deserialize(it + i * T::ssz_size,
-                                it + (i + 1) * T::ssz_size))
-        return false;
-    return true;
-  }
+        for (int i = 0; i < N; ++i)
+            if (!m_arr[i].deserialize(it + i * T::ssz_size, it + (i + 1) * T::ssz_size)) return false;
+        return true;
+    }
 
-  YAML::Node encode() const override {
-    return YAML::convert<std::array<T, N>>::encode(m_arr);
-  }
-  bool decode(const YAML::Node &node) override {
-    return YAML::convert<std::array<T, N>>::decode(node, m_arr);
-  }
+    YAML::Node encode() const override { return YAML::convert<std::array<T, N>>::encode(m_arr); }
+    bool decode(const YAML::Node &node) override { return YAML::convert<std::array<T, N>>::decode(node, m_arr); }
 };
 
-template <class T> class ListFixedSizedParts : public ssz::Container {
-private:
-  std::vector<T> m_arr;
+template <class T>
+class ListFixedSizedParts : public ssz::Container {
+   private:
+    std::vector<T> m_arr;
 
-public:
-  std::size_t size(void) const { return m_arr.size(); }
+   public:
+    std::size_t size(void) const { return m_arr.size(); }
 
-  constexpr typename std::vector<T>::iterator begin() noexcept {
-    return m_arr.begin();
-  }
+    constexpr typename std::vector<T>::iterator begin() noexcept { return m_arr.begin(); }
 
-  constexpr typename std::vector<T>::const_iterator cbegin() const noexcept {
-    return m_arr.cbegin();
-  }
+    constexpr typename std::vector<T>::const_iterator cbegin() const noexcept { return m_arr.cbegin(); }
 
-  constexpr typename std::vector<T>::iterator end() noexcept {
-    return m_arr.end();
-  }
+    constexpr typename std::vector<T>::iterator end() noexcept { return m_arr.end(); }
 
-  constexpr typename std::vector<T>::const_iterator cend() const noexcept {
-    return m_arr.cend();
-  }
+    constexpr typename std::vector<T>::const_iterator cend() const noexcept { return m_arr.cend(); }
 
-  BytesVector serialize() const override {
-    BytesVector ret;
-    for (auto part : m_arr) {
-      auto part_ssz = part.serialize();
-      ret.insert(ret.end(), part_ssz.begin(), part_ssz.end());
+    BytesVector serialize() const override {
+        BytesVector ret;
+        for (auto part : m_arr) {
+            auto part_ssz = part.serialize();
+            ret.insert(ret.end(), part_ssz.begin(), part_ssz.end());
+        }
+        return ret;
     }
-    return ret;
-  }
 
-  bool deserialize(ssz::SSZIterator it, ssz::SSZIterator end) override {
-    m_arr.clear();
-    if (std::distance(it, end) % T::ssz_size)
-      return false;
+    bool deserialize(ssz::SSZIterator it, ssz::SSZIterator end) override {
+        m_arr.clear();
+        if (std::distance(it, end) % T::ssz_size) return false;
 
-    for (auto i = it; i != end; i += T::ssz_size) {
-      T obj;
-      if (!obj.deserialize(i, i + T::ssz_size))
-        return false;
-      m_arr.push_back(obj);
+        for (auto i = it; i != end; i += T::ssz_size) {
+            T obj;
+            if (!obj.deserialize(i, i + T::ssz_size)) return false;
+            m_arr.push_back(obj);
+        }
+        return true;
     }
-    return true;
-  }
 
-  YAML::Node encode() const override {
-    return YAML::convert<std::vector<T>>::encode(m_arr);
-  }
-  bool decode(const YAML::Node &node) override {
-    return YAML::convert<std::vector<T>>::decode(node, m_arr);
-  }
+    YAML::Node encode() const override { return YAML::convert<std::vector<T>>::encode(m_arr); }
+    bool decode(const YAML::Node &node) override { return YAML::convert<std::vector<T>>::decode(node, m_arr); }
 };
 
-template <class T> class ListVariableSizedParts : public ssz::Container {
-private:
-  std::vector<T> m_arr;
+template <class T>
+class ListVariableSizedParts : public ssz::Container {
+   private:
+    std::vector<T> m_arr;
 
-public:
-  std::size_t size(void) const { return m_arr.size(); }
+   public:
+    std::size_t size(void) const { return m_arr.size(); }
 
-  constexpr typename std::vector<T>::iterator begin() noexcept {
-    return m_arr.begin();
-  }
+    constexpr typename std::vector<T>::iterator begin() noexcept { return m_arr.begin(); }
 
-  constexpr typename std::vector<T>::const_iterator cbegin() const noexcept {
-    return m_arr.cbegin();
-  }
+    constexpr typename std::vector<T>::const_iterator cbegin() const noexcept { return m_arr.cbegin(); }
 
-  constexpr typename std::vector<T>::iterator end() noexcept {
-    return m_arr.end();
-  }
+    constexpr typename std::vector<T>::iterator end() noexcept { return m_arr.end(); }
 
-  constexpr typename std::vector<T>::const_iterator cend() const noexcept {
-    return m_arr.cend();
-  }
+    constexpr typename std::vector<T>::const_iterator cend() const noexcept { return m_arr.cend(); }
 
-  BytesVector serialize() const override {
-    BytesVector offsets, ret;
-    std::uint32_t offset = size() * constants::BYTES_PER_LENGTH_OFFSET;
-    for (auto part : m_arr) {
-      auto offset_ssz = Bytes4(offset).serialize();
-      offsets.insert(offsets.end(), offset_ssz.begin(), offset_ssz.end());
+    BytesVector serialize() const override {
+        BytesVector offsets, ret;
+        std::uint32_t offset = size() * constants::BYTES_PER_LENGTH_OFFSET;
+        for (auto part : m_arr) {
+            auto offset_ssz = Bytes4(offset).serialize();
+            offsets.insert(offsets.end(), offset_ssz.begin(), offset_ssz.end());
 
-      auto part_ssz = part.serialize();
-      offset += part_ssz.size();
-      ret.insert(ret.end(), part_ssz.begin(), part_ssz.end());
+            auto part_ssz = part.serialize();
+            offset += part_ssz.size();
+            ret.insert(ret.end(), part_ssz.begin(), part_ssz.end());
+        }
+        if (offsets.size()) ret.insert(ret.begin(), offsets.begin(), offsets.end());
+        return ret;
     }
-    if (offsets.size())
-      ret.insert(ret.begin(), offsets.begin(), offsets.end());
-    return ret;
-  }
-  bool deserialize(ssz::SSZIterator it, ssz::SSZIterator end) override {
-    m_arr.clear();
-    if (it == end) // empty list
-      return true;
-    if (std::distance(it, end) < constants::BYTES_PER_LENGTH_OFFSET)
-      return false;
-    auto start = it;
-    auto first_offset = helpers::to_integer_little_endian<std::uint32_t>(&*it);
-    if (first_offset < constants::BYTES_PER_LENGTH_OFFSET)
-      return false;
-    if (std::distance(start, end) < first_offset)
-      return false;
-    auto last_offset = first_offset;
-    it += constants::BYTES_PER_LENGTH_OFFSET;
+    bool deserialize(ssz::SSZIterator it, ssz::SSZIterator end) override {
+        m_arr.clear();
+        if (it == end)  // empty list
+            return true;
+        if (std::distance(it, end) < constants::BYTES_PER_LENGTH_OFFSET) return false;
+        auto start = it;
+        auto first_offset = helpers::to_integer_little_endian<std::uint32_t>(&*it);
+        if (first_offset < constants::BYTES_PER_LENGTH_OFFSET) return false;
+        if (std::distance(start, end) < first_offset) return false;
+        auto last_offset = first_offset;
+        it += constants::BYTES_PER_LENGTH_OFFSET;
 
-    while (it != start + first_offset) {
-      if (std::distance(start, it) + constants::BYTES_PER_LENGTH_OFFSET >
-          first_offset)
-        return false;
+        while (it != start + first_offset) {
+            if (std::distance(start, it) + constants::BYTES_PER_LENGTH_OFFSET > first_offset) return false;
 
-      auto current_offset =
-          helpers::to_integer_little_endian<std::uint32_t>(&*it);
-      if (current_offset < last_offset)
-        return false;
-      if (std::distance(start, end) < current_offset)
-        return false;
-      T obj;
-      if (!obj.deserialize(start + last_offset, start + current_offset))
-        return false;
-      m_arr.push_back(obj);
-      last_offset = current_offset;
-      it += constants::BYTES_PER_LENGTH_OFFSET;
+            auto current_offset = helpers::to_integer_little_endian<std::uint32_t>(&*it);
+            if (current_offset < last_offset) return false;
+            if (std::distance(start, end) < current_offset) return false;
+            T obj;
+            if (!obj.deserialize(start + last_offset, start + current_offset)) return false;
+            m_arr.push_back(obj);
+            last_offset = current_offset;
+            it += constants::BYTES_PER_LENGTH_OFFSET;
+        }
+        T obj;
+        if (!obj.deserialize(start + last_offset, end)) return false;
+        m_arr.push_back(obj);
+        return true;
     }
-    T obj;
-    if (!obj.deserialize(start + last_offset, end))
-      return false;
-    m_arr.push_back(obj);
-    return true;
-  }
 
-  YAML::Node encode() const override {
-    return YAML::convert<std::vector<T>>::encode(m_arr);
-  }
-  bool decode(const YAML::Node &node) override {
-    return YAML::convert<std::vector<T>>::decode(node, m_arr);
-  }
+    YAML::Node encode() const override { return YAML::convert<std::vector<T>>::encode(m_arr); }
+    bool decode(const YAML::Node &node) override { return YAML::convert<std::vector<T>>::decode(node, m_arr); }
 };
 
 struct Fork : public ssz::Container {
-  Version previous_version, current_version;
-  Epoch epoch;
+    Version previous_version, current_version;
+    Epoch epoch;
 
-  static constexpr std::size_t ssz_size = 16;
-  std::size_t get_ssz_size() const override { return ssz_size; }
-  BytesVector serialize() const override {
-    return serialize_({&previous_version, &current_version, &epoch});
-  }
+    static constexpr std::size_t ssz_size = 16;
+    std::size_t get_ssz_size() const override { return ssz_size; }
+    BytesVector serialize() const override { return serialize_({&previous_version, &current_version, &epoch}); }
 
-  bool deserialize(ssz::SSZIterator it, ssz::SSZIterator end) override {
-    return deserialize_(it, end, {&previous_version, &current_version, &epoch});
-  }
+    bool deserialize(ssz::SSZIterator it, ssz::SSZIterator end) override {
+        return deserialize_(it, end, {&previous_version, &current_version, &epoch});
+    }
 
-  bool operator==(const Fork &) const = default;
+    bool operator==(const Fork &) const = default;
 
-  YAML::Node encode() const override {
-    return encode_({{"previous_version", &previous_version},
-                    {"current_version", &current_version},
-                    {"epoch", &epoch}});
-  }
+    YAML::Node encode() const override {
+        return encode_(
+            {{"previous_version", &previous_version}, {"current_version", &current_version}, {"epoch", &epoch}});
+    }
 
-  bool decode(const YAML::Node &node) override {
-    return decode_(node, {{"previous_version", &previous_version},
-                          {"current_version", &current_version},
-                          {"epoch", &epoch}});
-  }
+    bool decode(const YAML::Node &node) override {
+        return decode_(
+            node, {{"previous_version", &previous_version}, {"current_version", &current_version}, {"epoch", &epoch}});
+    }
 };
 
 struct ForkData : public ssz::Container {
-  Version current_version;
-  Root genesis_validators_root;
+    Version current_version;
+    Root genesis_validators_root;
 
-  static constexpr std::size_t ssz_size = 36;
-  std::size_t get_ssz_size() const override { return ssz_size; }
-  BytesVector serialize() const override {
-    return serialize_({&current_version, &genesis_validators_root});
-  }
+    static constexpr std::size_t ssz_size = 36;
+    std::size_t get_ssz_size() const override { return ssz_size; }
+    BytesVector serialize() const override { return serialize_({&current_version, &genesis_validators_root}); }
 
-  bool deserialize(ssz::SSZIterator it, ssz::SSZIterator end) override {
-    return deserialize_(it, end, {&current_version, &genesis_validators_root});
-  }
+    bool deserialize(ssz::SSZIterator it, ssz::SSZIterator end) override {
+        return deserialize_(it, end, {&current_version, &genesis_validators_root});
+    }
 
-  YAML::Node encode() const override {
-    return encode_({{"current_version", &current_version},
-                    {"genesis_validators_root", &genesis_validators_root}});
-  }
+    YAML::Node encode() const override {
+        return encode_({{"current_version", &current_version}, {"genesis_validators_root", &genesis_validators_root}});
+    }
 
-  bool decode(const YAML::Node &node) override {
-    return decode_(node,
-                   {{"current_version", &current_version},
-                    {"genesis_validators_root", &genesis_validators_root}});
-  }
+    bool decode(const YAML::Node &node) override {
+        return decode_(node,
+                       {{"current_version", &current_version}, {"genesis_validators_root", &genesis_validators_root}});
+    }
 };
 
 struct Checkpoint : public ssz::Container {
-  Epoch epoch;
-  Root root;
+    Epoch epoch;
+    Root root;
 
-  static constexpr std::size_t ssz_size = 40;
-  std::size_t get_ssz_size() const override { return ssz_size; }
-  BytesVector serialize() const override { return serialize_({&epoch, &root}); }
-  bool deserialize(ssz::SSZIterator it, ssz::SSZIterator end) override {
-    return deserialize_(it, end, {&epoch, &root});
-  }
+    static constexpr std::size_t ssz_size = 40;
+    std::size_t get_ssz_size() const override { return ssz_size; }
+    BytesVector serialize() const override { return serialize_({&epoch, &root}); }
+    bool deserialize(ssz::SSZIterator it, ssz::SSZIterator end) override {
+        return deserialize_(it, end, {&epoch, &root});
+    }
 
-  YAML::Node encode() const override {
-    return encode_({{"epoch", &epoch}, {"root", &root}});
-  }
+    YAML::Node encode() const override { return encode_({{"epoch", &epoch}, {"root", &root}}); }
 
-  bool decode(const YAML::Node &node) override {
-    return decode_(node, {{"epoch", &epoch}, {"root", &root}});
-  }
+    bool decode(const YAML::Node &node) override { return decode_(node, {{"epoch", &epoch}, {"root", &root}}); }
 };
 
 struct SigningData : public ssz::Container {
-  Root object_root;
-  Domain domain;
+    Root object_root;
+    Domain domain;
 
-  static constexpr std::size_t ssz_size = 64;
-  std::size_t get_ssz_size() const override { return ssz_size; }
-  BytesVector serialize() const override {
-    return serialize_({&object_root, &domain});
-  }
-  bool deserialize(ssz::SSZIterator it, ssz::SSZIterator end) override {
-    return deserialize_(it, end, {&object_root, &domain});
-  }
+    static constexpr std::size_t ssz_size = 64;
+    std::size_t get_ssz_size() const override { return ssz_size; }
+    BytesVector serialize() const override { return serialize_({&object_root, &domain}); }
+    bool deserialize(ssz::SSZIterator it, ssz::SSZIterator end) override {
+        return deserialize_(it, end, {&object_root, &domain});
+    }
 
-  YAML::Node encode() const override {
-    return encode_({{"object_root", &object_root}, {"domain", &domain}});
-  }
+    YAML::Node encode() const override { return encode_({{"object_root", &object_root}, {"domain", &domain}}); }
 
-  bool decode(const YAML::Node &node) override {
-    return decode_(node, {{"object_root", &object_root}, {"domain", &domain}});
-  }
+    bool decode(const YAML::Node &node) override {
+        return decode_(node, {{"object_root", &object_root}, {"domain", &domain}});
+    }
 };
 
-} // namespace eth
+}  // namespace eth

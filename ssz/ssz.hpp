@@ -26,4 +26,4 @@ namespace constants {
 constexpr std::uint32_t BYTES_PER_LENGTH_OFFSET = 4;
 constexpr unsigned int BYTES_PER_CHUNK = 32;
 constexpr unsigned int BITS_PER_BYTE = 8;
-} // namespace constants
+}  // namespace constants

@@ -20,10 +20,11 @@
  */
 
 #pragma once
-#include "yaml-cpp/yaml.h"
 #include <cstddef>
 #include <string>
 #include <vector>
+
+#include "yaml-cpp/yaml.h"
 
 namespace ssz {
 class Container;
@@ -33,27 +34,25 @@ using SSZIterator = std::vector<std::byte>::iterator;
 
 // NOLINTNEXTLINE(cppcoreguidelines-special-member-functions)
 class Container {
-protected:
-  static std::vector<std::byte>
-  serialize_(const std::vector<const Container *> &);
-  static bool deserialize_(SSZIterator it, SSZIterator end,
-                           const std::vector<Container *> &);
-  static YAML::Node encode_(const std::vector<ConstPart> &parts);
-  static bool decode_(const YAML::Node &node, std::vector<Part> parts);
+   protected:
+    static std::vector<std::byte> serialize_(const std::vector<const Container *> &);
+    static bool deserialize_(SSZIterator it, SSZIterator end, const std::vector<Container *> &);
+    static YAML::Node encode_(const std::vector<ConstPart> &parts);
+    static bool decode_(const YAML::Node &node, std::vector<Part> parts);
 
-public:
-  virtual ~Container() = default; // NOLINT
+   public:
+    virtual ~Container() = default;  // NOLINT
 
-  virtual std::size_t get_ssz_size() const { return 0; }
-  virtual std::vector<std::byte> serialize() const = 0;
-  virtual bool deserialize(SSZIterator it, SSZIterator end) = 0;
+    virtual std::size_t get_ssz_size() const { return 0; }
+    virtual std::vector<std::byte> serialize() const = 0;
+    virtual bool deserialize(SSZIterator it, SSZIterator end) = 0;
 
-  virtual YAML::Node encode() const = 0;
-  virtual bool decode(const YAML::Node &node) = 0;
-  bool operator==(const Container &) const { return true; }
+    virtual YAML::Node encode() const = 0;
+    virtual bool decode(const YAML::Node &node) = 0;
+    bool operator==(const Container &) const { return true; }
 };
 
-} // namespace ssz
+}  // namespace ssz
 
 // clang-format off
 template <class T>

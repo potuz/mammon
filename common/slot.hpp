@@ -21,41 +21,35 @@
 
 #pragma once
 
+#include <cstdint>
+
 #include "bytes.hpp"
 #include "helpers/bytes_to_int.hpp"
 #include "ssz/ssz_container.hpp"
 #include "yaml-cpp/yaml.h"
-#include <cstdint>
 
 namespace eth {
 class Slot : public ssz::Container {
-private:
-  std::uint64_t value_;
+   private:
+    std::uint64_t value_;
 
-public:
-  constexpr Slot(std::uint64_t s = 0) : value_{s} {};
-  operator std::uint64_t() const { return value_; };
-  operator std::uint64_t &() { return value_; }
-  operator Bytes8() const { return Bytes8{value_}; }
-  std::vector<std::byte> serialize() const override {
-    return Bytes8(value_).serialize();
-  }
-  bool deserialize(ssz::SSZIterator it, ssz::SSZIterator end) override {
-    if (std::distance(it, end) != sizeof(value_))
-      return false;
-    value_ = helpers::to_integer_little_endian<std::uint64_t>(&*it);
-    return true;
-  }
+   public:
+    constexpr Slot(std::uint64_t s = 0) : value_{s} {};
+    operator std::uint64_t() const { return value_; };
+    operator std::uint64_t &() { return value_; }
+    operator Bytes8() const { return Bytes8{value_}; }
+    std::vector<std::byte> serialize() const override { return Bytes8(value_).serialize(); }
+    bool deserialize(ssz::SSZIterator it, ssz::SSZIterator end) override {
+        if (std::distance(it, end) != sizeof(value_)) return false;
+        value_ = helpers::to_integer_little_endian<std::uint64_t>(&*it);
+        return true;
+    }
 
-  bool operator==(const Slot &) const = default;
-  static constexpr std::size_t ssz_size = 8;
-  std::size_t get_ssz_size() const override { return ssz_size; }
+    bool operator==(const Slot &) const = default;
+    static constexpr std::size_t ssz_size = 8;
+    std::size_t get_ssz_size() const override { return ssz_size; }
 
-  YAML::Node encode() const override {
-    return YAML::convert<std::uint64_t>::encode(value_);
-  }
-  bool decode(const YAML::Node &node) override {
-    return YAML::convert<std::uint64_t>::decode(node, value_);
-  }
+    YAML::Node encode() const override { return YAML::convert<std::uint64_t>::encode(value_); }
+    bool decode(const YAML::Node &node) override { return YAML::convert<std::uint64_t>::decode(node, value_); }
 };
-} // namespace eth
+}  // namespace eth

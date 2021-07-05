@@ -20,89 +20,78 @@
  */
 
 #pragma once
+#include <numeric>
+
 #include "common/basic_types.hpp"
 #include "common/containers.hpp"
 #include "include/config.hpp"
 #include "ssz/ssz_container.hpp"
 #include "yaml-cpp/yaml.h"
-#include <numeric>
 
 namespace eth {
 struct DepositMessage : public ssz::Container {
-  BLSPubkey pubkey;
-  Bytes32 withdrawal_credentials;
-  Gwei amount;
+    BLSPubkey pubkey;
+    Bytes32 withdrawal_credentials;
+    Gwei amount;
 
-  static constexpr std::size_t ssz_size = 88;
-  std::size_t get_ssz_size() const override { return ssz_size; }
-  BytesVector serialize() const override {
-    return serialize_({&pubkey, &withdrawal_credentials, &amount});
-  }
-  bool deserialize(ssz::SSZIterator it, ssz::SSZIterator end) override {
-    return deserialize_(it, end, {&pubkey, &withdrawal_credentials, &amount});
-  }
-  YAML::Node encode() const override {
-    return encode_({{"pubkey", &pubkey},
-                    {"withdrawal_credentials", &withdrawal_credentials},
-                    {"amount", &amount}});
-  }
+    static constexpr std::size_t ssz_size = 88;
+    std::size_t get_ssz_size() const override { return ssz_size; }
+    BytesVector serialize() const override { return serialize_({&pubkey, &withdrawal_credentials, &amount}); }
+    bool deserialize(ssz::SSZIterator it, ssz::SSZIterator end) override {
+        return deserialize_(it, end, {&pubkey, &withdrawal_credentials, &amount});
+    }
+    YAML::Node encode() const override {
+        return encode_({{"pubkey", &pubkey}, {"withdrawal_credentials", &withdrawal_credentials}, {"amount", &amount}});
+    }
 
-  bool decode(const YAML::Node &node) override {
-    return decode_(node, {{"pubkey", &pubkey},
-                          {"withdrawal_credentials", &withdrawal_credentials},
-                          {"amount", &amount}});
-  }
+    bool decode(const YAML::Node &node) override {
+        return decode_(node,
+                       {{"pubkey", &pubkey}, {"withdrawal_credentials", &withdrawal_credentials}, {"amount", &amount}});
+    }
 };
 
 struct DepositData : public ssz::Container {
-  BLSPubkey pubkey;
-  Bytes32 withdrawal_credentials;
-  Gwei amount;
-  BLSSignature signature;
+    BLSPubkey pubkey;
+    Bytes32 withdrawal_credentials;
+    Gwei amount;
+    BLSSignature signature;
 
-  static constexpr std::size_t ssz_size = 184;
-  std::size_t get_ssz_size() const override { return ssz_size; }
-  BytesVector serialize() const override {
-    return serialize_({&pubkey, &withdrawal_credentials, &amount, &signature});
-  }
-  bool deserialize(ssz::SSZIterator it, ssz::SSZIterator end) override {
-    return deserialize_(
-        it, end, {&pubkey, &withdrawal_credentials, &amount, &signature});
-  }
-  YAML::Node encode() const override {
-    return encode_({{"pubkey", &pubkey},
-                    {"withdrawal_credentials", &withdrawal_credentials},
-                    {"amount", &amount},
-                    {"signature", &signature}});
-  }
+    static constexpr std::size_t ssz_size = 184;
+    std::size_t get_ssz_size() const override { return ssz_size; }
+    BytesVector serialize() const override {
+        return serialize_({&pubkey, &withdrawal_credentials, &amount, &signature});
+    }
+    bool deserialize(ssz::SSZIterator it, ssz::SSZIterator end) override {
+        return deserialize_(it, end, {&pubkey, &withdrawal_credentials, &amount, &signature});
+    }
+    YAML::Node encode() const override {
+        return encode_({{"pubkey", &pubkey},
+                        {"withdrawal_credentials", &withdrawal_credentials},
+                        {"amount", &amount},
+                        {"signature", &signature}});
+    }
 
-  bool decode(const YAML::Node &node) override {
-    return decode_(node, {{"pubkey", &pubkey},
-                          {"withdrawal_credentials", &withdrawal_credentials},
-                          {"amount", &amount},
-                          {"signature", &signature}});
-  }
+    bool decode(const YAML::Node &node) override {
+        return decode_(node, {{"pubkey", &pubkey},
+                              {"withdrawal_credentials", &withdrawal_credentials},
+                              {"amount", &amount},
+                              {"signature", &signature}});
+    }
 };
 
 struct Deposit : public ssz::Container {
-  VectorFixedSizedParts<Bytes32, constants::DEPOSIT_CONTRACT_TREE_DEPTH + 1>
-      proof;
-  eth::DepositData data;
+    VectorFixedSizedParts<Bytes32, constants::DEPOSIT_CONTRACT_TREE_DEPTH + 1> proof;
+    eth::DepositData data;
 
-  static constexpr std::size_t ssz_size =
-      32 * constants::DEPOSIT_CONTRACT_TREE_DEPTH + 216;
-  std::size_t get_ssz_size() const override { return ssz_size; }
-  BytesVector serialize() const override { return serialize_({&proof, &data}); }
-  bool deserialize(ssz::SSZIterator it, ssz::SSZIterator end) override {
-    return deserialize_(it, end, {&proof, &data});
-  }
+    static constexpr std::size_t ssz_size = 32 * constants::DEPOSIT_CONTRACT_TREE_DEPTH + 216;
+    std::size_t get_ssz_size() const override { return ssz_size; }
+    BytesVector serialize() const override { return serialize_({&proof, &data}); }
+    bool deserialize(ssz::SSZIterator it, ssz::SSZIterator end) override {
+        return deserialize_(it, end, {&proof, &data});
+    }
 
-  YAML::Node encode() const override {
-    return encode_({{"proof", &proof}, {"data", &data}});
-  }
+    YAML::Node encode() const override { return encode_({{"proof", &proof}, {"data", &data}}); }
 
-  bool decode(const YAML::Node &node) override {
-    return decode_(node, {{"proof", &proof}, {"data", &data}});
-  }
+    bool decode(const YAML::Node &node) override { return decode_(node, {{"proof", &proof}, {"data", &data}}); }
 };
-} // namespace eth
+}  // namespace eth

@@ -27,116 +27,99 @@
 
 namespace eth {
 struct AttestationData : public ssz::Container {
-  Slot slot;
-  CommitteeIndex index;
+    Slot slot;
+    CommitteeIndex index;
 
-  Root beacon_block_root;
-  Checkpoint source, target;
+    Root beacon_block_root;
+    Checkpoint source, target;
 
-  static constexpr std::size_t ssz_size = 128;
-  std::size_t get_ssz_size() const override { return ssz_size; }
-  BytesVector serialize() const override {
-    return serialize_({&slot, &index, &beacon_block_root, &source, &target});
-  }
-  bool deserialize(ssz::SSZIterator it, ssz::SSZIterator end) override {
-    return deserialize_(it, end,
-                        {&slot, &index, &beacon_block_root, &source, &target});
-  }
+    static constexpr std::size_t ssz_size = 128;
+    std::size_t get_ssz_size() const override { return ssz_size; }
+    BytesVector serialize() const override { return serialize_({&slot, &index, &beacon_block_root, &source, &target}); }
+    bool deserialize(ssz::SSZIterator it, ssz::SSZIterator end) override {
+        return deserialize_(it, end, {&slot, &index, &beacon_block_root, &source, &target});
+    }
 
-  YAML::Node encode() const override {
-    return encode_({{"slot", &slot},
-                    {"index", &index},
-                    {"beacon_block_root", &beacon_block_root},
-                    {"source", &source},
-                    {"target", &target}});
-  }
+    YAML::Node encode() const override {
+        return encode_({{"slot", &slot},
+                        {"index", &index},
+                        {"beacon_block_root", &beacon_block_root},
+                        {"source", &source},
+                        {"target", &target}});
+    }
 
-  bool decode(const YAML::Node &node) override {
-    return decode_(node, {{"slot", &slot},
-                          {"index", &index},
-                          {"beacon_block_root", &beacon_block_root},
-                          {"source", &source},
-                          {"target", &target}});
-  }
+    bool decode(const YAML::Node &node) override {
+        return decode_(node, {{"slot", &slot},
+                              {"index", &index},
+                              {"beacon_block_root", &beacon_block_root},
+                              {"source", &source},
+                              {"target", &target}});
+    }
 };
 
 struct IndexedAttestation : public ssz::Container {
-  ListFixedSizedParts<ValidatorIndex> attesting_indices;
-  AttestationData data;
-  BLSSignature signature;
+    ListFixedSizedParts<ValidatorIndex> attesting_indices;
+    AttestationData data;
+    BLSSignature signature;
 
-  BytesVector serialize() const override {
-    return serialize_({&attesting_indices, &data, &signature});
-  }
-  bool deserialize(ssz::SSZIterator it, ssz::SSZIterator end) override {
-    return deserialize_(it, end, {&attesting_indices, &data, &signature});
-  }
+    BytesVector serialize() const override { return serialize_({&attesting_indices, &data, &signature}); }
+    bool deserialize(ssz::SSZIterator it, ssz::SSZIterator end) override {
+        return deserialize_(it, end, {&attesting_indices, &data, &signature});
+    }
 
-  YAML::Node encode() const override {
-    return encode_({{"attesting_indices", &attesting_indices},
-                    {"data", &data},
-                    {"signature", &signature}});
-  }
+    YAML::Node encode() const override {
+        return encode_({{"attesting_indices", &attesting_indices}, {"data", &data}, {"signature", &signature}});
+    }
 
-  bool decode(const YAML::Node &node) override {
-    return decode_(node, {{"attesting_indices", &attesting_indices},
-                          {"data", &data},
-                          {"signature", &signature}});
-  }
+    bool decode(const YAML::Node &node) override {
+        return decode_(node, {{"attesting_indices", &attesting_indices}, {"data", &data}, {"signature", &signature}});
+    }
 };
 
 struct PendingAttestation : public ssz::Container {
-  eth::Bitlist aggregation_bits;
-  AttestationData data;
-  Slot inclusion_delay;
-  ValidatorIndex proposer_index;
+    eth::Bitlist aggregation_bits;
+    AttestationData data;
+    Slot inclusion_delay;
+    ValidatorIndex proposer_index;
 
-  BytesVector serialize() const override {
-    return serialize_(
-        {&aggregation_bits, &data, &inclusion_delay, &proposer_index});
-  }
-  bool deserialize(ssz::SSZIterator it, ssz::SSZIterator end) override {
-    return deserialize_(
-        it, end, {&aggregation_bits, &data, &inclusion_delay, &proposer_index});
-  }
+    BytesVector serialize() const override {
+        return serialize_({&aggregation_bits, &data, &inclusion_delay, &proposer_index});
+    }
+    bool deserialize(ssz::SSZIterator it, ssz::SSZIterator end) override {
+        return deserialize_(it, end, {&aggregation_bits, &data, &inclusion_delay, &proposer_index});
+    }
 
-  YAML::Node encode() const override {
-    return encode_({{"aggregation_bits", &aggregation_bits},
-                    {"data", &data},
-                    {"inclusion_delay", &inclusion_delay},
-                    {"proposer_index", &proposer_index}});
-  }
+    YAML::Node encode() const override {
+        return encode_({{"aggregation_bits", &aggregation_bits},
+                        {"data", &data},
+                        {"inclusion_delay", &inclusion_delay},
+                        {"proposer_index", &proposer_index}});
+    }
 
-  bool decode(const YAML::Node &node) override {
-    return decode_(node, {{"aggregation_bits", &aggregation_bits},
-                          {"data", &data},
-                          {"inclusion_delay", &inclusion_delay},
-                          {"proposer_index", &proposer_index}});
-  }
+    bool decode(const YAML::Node &node) override {
+        return decode_(node, {{"aggregation_bits", &aggregation_bits},
+                              {"data", &data},
+                              {"inclusion_delay", &inclusion_delay},
+                              {"proposer_index", &proposer_index}});
+    }
 };
 
 struct Attestation : public ssz::Container {
-  eth::Bitlist aggregation_bits;
-  AttestationData data;
-  BLSSignature signature;
+    eth::Bitlist aggregation_bits;
+    AttestationData data;
+    BLSSignature signature;
 
-  BytesVector serialize() const override {
-    return serialize_({&aggregation_bits, &data, &signature});
-  }
-  bool deserialize(ssz::SSZIterator it, ssz::SSZIterator end) override {
-    return deserialize_(it, end, {&aggregation_bits, &data, &signature});
-  }
-  YAML::Node encode() const override {
-    return encode_({{"aggregation_bits", &aggregation_bits},
-                    {"data", &data},
-                    {"signature", &signature}});
-  }
+    BytesVector serialize() const override { return serialize_({&aggregation_bits, &data, &signature}); }
+    bool deserialize(ssz::SSZIterator it, ssz::SSZIterator end) override {
+        return deserialize_(it, end, {&aggregation_bits, &data, &signature});
+    }
+    YAML::Node encode() const override {
+        return encode_({{"aggregation_bits", &aggregation_bits}, {"data", &data}, {"signature", &signature}});
+    }
 
-  bool decode(const YAML::Node &node) override {
-    return decode_(node, {{"aggregation_bits", &aggregation_bits},
-                          {"data", &data},
-                          {"signature", &signature}});
-  }
+    bool decode(const YAML::Node &node) override {
+        return decode_(node, {{"aggregation_bits", &aggregation_bits}, {"data", &data}, {"signature", &signature}});
+    }
 };
 
-}; // namespace eth
+};  // namespace eth
