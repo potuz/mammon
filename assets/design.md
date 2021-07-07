@@ -1,4 +1,4 @@
-#Design
+# Design
 
 ## Template for ssz_container + yaml parser
 
@@ -30,7 +30,10 @@ We can probably store a `static constexpr type = S` in the child's type. since t
 ## Cache of Partial Merkle-Tree
 We need to keep a cache of the hash tree of the bigger lists. We are confronted with the following problem. Since `VALIDATOR_REGISTRY_LIMIT` is $2^{40}$ but we only have ~180K validators, our tree looks like
 
-```dot
+![Alt text](https://g.gravizo.com/source/custom_mark10?https%3A%2F%2Fraw.githubusercontent.com%2Fpotuz%2Fmammon%2Fmain%2Fassets%2Fdesign.md)
+<details>
+<summary></summary>
+custom_mark10
 digraph G {
   root [color=blue, style=bold]
   a [color=blue, style=bold]
@@ -59,8 +62,9 @@ digraph G {
     e -> 6;
     f -> 7;
     f -> 8;
-}
-```
+ }
+custom_mark10
+</details>
 
 Here the right hand greyed-out part of the tree consists of a *zero-hash-array* that is constants. The `#(0,0)` means the hash of `32*'b0' + 32*'b0'` and recursively define the next levels
 
