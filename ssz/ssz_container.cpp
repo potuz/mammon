@@ -116,7 +116,8 @@ std::vector<Chunk> Container::hash_tree_(const std::vector<const Container *> &p
 
     std::vector<Chunk> chunks;
     chunks.reserve(parts.size() * sizeof(Chunk));
-    for (auto &part : parts) chunks.push_back(part->hash_tree_root());
+    std::transform(parts.begin(), parts.end(), std::back_inserter(chunks), [](const Container * part) -> auto { 
+            return part->hash_tree_root(); });
 
     HashTree hash_tree{chunks};
     return hash_tree.hash_tree();

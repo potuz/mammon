@@ -30,6 +30,19 @@ else()
 	configure_file(config/mainnet.hpp.in "${CMAKE_SOURCE_DIR}/include/config.hpp")
 endif()
 
+option(CPPCHECK "Analyze the code with cppcheck")
+if(CPPCHECK)
+	message(STATUS "Building with cppcheck")
+	set(CMAKE_CXX_CPPCHECK "cppcheck")
+	list(
+		APPEND CMAKE_CXX_CPPCHECK
+		"--enable=all"
+		"--suppress=duplicateBranch"
+		"--inline-suppr"
+		"--inconclusive"
+	)
+endif()
+
 option(TIDY "Analyze the code with clang-tidy")
 if(TIDY)
 	message(STATUS "Building with clang-tidy")

@@ -23,6 +23,7 @@
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
+#include <iterator>
 
 #include "common/slot.hpp"
 #include "ssz/hashtree.hpp"
@@ -174,7 +175,8 @@ class ListVariableSizedParts : public ssz::Container {
     std::vector<ssz::Chunk> hash_tree() const override {
         std::vector<ssz::Chunk> chunks{};
         chunks.reserve(m_arr.size() * sizeof(ssz::Chunk));
-        for (auto &part : m_arr) chunks.push_back(part.hash_tree_root());
+        std::transform(m_arr.begin(), m_arr.end(), std::back_inserter(chunks), [](const T& part) {
+                return part.hash_tree_root();});
         if (chunks.empty()) {
             ssz::Chunk chunk{};
             chunks.push_back(chunk);
