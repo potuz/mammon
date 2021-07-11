@@ -86,42 +86,6 @@ void test_ssz(const std::string &&path) {
             }
 }
 
-template <typename T>
-void test_ssz_generic(const std::string &&path) {
-    auto base_path = constants::TEST_VECTORS_GENERAL_PATH + path + "/valid/";
-    for (auto &p1 : fs::directory_iterator(base_path)) {
-        auto node_root = YAML::LoadFile(p1.path().string() + "/meta.yaml");
-        auto root = node_root["root"].as<eth::Bytes32>();
-
-        auto ssz_snappy_path = p1.path().string() + "/serialized.ssz_snappy";
-        std::ifstream ssz_snappy(ssz_snappy_path, std::ios::in | std::ios::binary);
-        if (not ssz_snappy.is_open())
-            throw std::filesystem::filesystem_error("could not open file", p1.path(), std::error_code());
-
-        const std::size_t size = std::filesystem::file_size(ssz_snappy_path);
-        std::vector<std::byte> content(size);
-        // NOLINTNEXTLINE
-        ssz_snappy.read(reinterpret_cast<char *>(content.data()), size);
-        ssz_snappy.close();
-
-        std::size_t ssz_size{};
-        if (!snappy::GetUncompressedLength(reinterpret_cast<char *>(content.data()), size, &ssz_size))
-            throw std::filesystem::filesystem_error("could not uncompress file", p1.path(), std::error_code());
-
-        std::vector<std::byte> output(ssz_size);
-        if (!snappy::RawUncompress(reinterpret_cast<char *>(content.data()),  // NOLINT
-                                   size,
-                                   reinterpret_cast<char *>(output.data())))  // NOLINT
-            throw std::filesystem::filesystem_error("could not uncompress file", p1.path(), std::error_code());
-
-        T ssz_type;
-        ssz_type.deserialize(output.begin(), output.end());
-
-        auto computed_root = ssz_type.hash_tree_root();
-        TEST_CHECK(computed_root == root.to_array());
-    }
-}
-
 const auto test_fork = []() { test_ssz<eth::Fork>("Fork"); };
 const auto test_forkdata = []() { test_ssz<eth::ForkData>("ForkData"); };
 const auto test_checkpoint = []() { test_ssz<eth::Checkpoint>("Checkpoint"); };
