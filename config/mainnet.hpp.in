@@ -21,7 +21,7 @@
 
 #pragma once
 
-#include "common/basic_types.hpp"
+#include "common/slot.hpp"
 #include <cstdint>
 
 using namespace std::string_literals;
@@ -56,6 +56,7 @@ constexpr eth::Eth1Address DEPOSIT_CONTRACT_ADDRESS{
     "0x00000000219ab540356cBB839Cbe05303d7705Fa"};
 
 constexpr auto TEST_VECTORS_PATH = "@CMAKE_SOURCE_DIR@/eth2.0-spec-tests/tests/mainnet/phase0/ssz_static/";
+constexpr auto TEST_VECTORS_GENERAL_PATH = "@CMAKE_SOURCE_DIR@/eth2.0-spec-tests/tests/general/phase0/ssz_generic/";
 
 constexpr int DEPOSIT_CONTRACT_TREE_DEPTH = 32;
 constexpr std::uint64_t JUSTIFICATION_BITS_LENGTH = 4;

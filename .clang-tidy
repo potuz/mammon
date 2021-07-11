@@ -1,4 +1,4 @@
-Checks: 'bugprone-*,clan-analyzer-*,concurrency-*,cppcoreguidelines-*,performance-*,'
+Checks: 'bugprone-*,clan-analyzer-*,concurrency-*,cppcoreguidelines-*,-cppcoreguidelines-pro-type-reinterpret-cast,performance-*,'
 WarningsAsErrors: '*'
 HeaderFilterRegex: '*'
 AnalyzeTemporaryDtors: false

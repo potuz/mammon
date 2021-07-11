@@ -70,8 +70,6 @@ Here the right hand greyed-out part of the tree consists of a *zero-hash-array* 
 
 For some lists, for example the `validators` list, additions typically happen in the right and in that case a modification requires only knowing a few nodes. For example to add a fourth entry in the above diagram we only need to modify the path marked in blue and to compute the new path we only need the siblings, that is the nodes marked `3`, `b`, and the root of the zero-hash array. These are the ones that are kept for example in the deposit contract since no changes to the previous deposits is allowed.
 
-However, changes to the validators (for example one may get slashed) or the effective balance, etc. Or even worse for the list of balances which changes on every epoch, require to change the entire non-zero part of the array. So for these lists we will keep a cache of the following data:
+However, changes to the validators (for example one may get slashed) or the effective balance, etc. Or even worse for the list of balances which changes on every epoch, require to change the entire non-zero part of the array. So for these lists we will keep a cache `hash_tree_cache` of only the array consisting in this case of `[root, a, b, c]`.
 
-- The level of the whole tree: in this case `4`.
-- The actual data array consisting in this case of `[root, a, b, c, 1, 2, 3, 0]` (note that it may be finalized by zero)
-- The level of the zero-hash array on the right, in this case `3`
+Given a list of length `length` (in this case `[1,2,3]`) and a limit `limit` (in this case `8`). The total hash tree has depth `log_2 limit+1` (in this case 4). We define the `effective_depth` as `ceil (log_2 length) + 1` (in this case `3`). So that the first `depth - effective_depth` elements of the `hash_tree_cache` consist of a hash of the next element plus the zero hash. The remaining elements of the list are computed as a normal merkle tree of depth `effective_depth`. 

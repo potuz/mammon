@@ -22,14 +22,25 @@
 #include "bitlist.hpp"
 
 #include <bit>
-#include <cstddef>
 #include <iomanip>
 #include <iostream>
 #include <sstream>
 
-#include "ssz/ssz.hpp"
+#include "config.hpp"
+#include "ssz/hashtree.hpp"
 
 namespace eth {
+std::vector<ssz::Chunk> Bitlist::hash_tree() const {
+    using namespace constants;
+    std::vector<std::byte> ret((m_arr.size() + BITS_PER_BYTE - 1) / BITS_PER_BYTE, std::byte(0));
+    for (int i = 0; i < m_arr.size(); ++i)
+        ret[i / constants::BITS_PER_BYTE] |= std::byte(static_cast<unsigned char>(m_arr[i] << (i % BITS_PER_BYTE)));
+    auto limit = (limit_ + BITS_PER_BYTE * BYTES_PER_CHUNK - 1) / (BITS_PER_BYTE * BYTES_PER_CHUNK);
+    ssz::HashTree ht{ret, limit};
+    ht.mix_in(m_arr.size());
+    return ht.hash_tree();
+}
+
 std::vector<std::byte> Bitlist::serialize() const {
     std::vector<std::byte> ret(m_arr.size() / constants::BITS_PER_BYTE + 1, std::byte(0));
     for (int i = 0; i < m_arr.size(); ++i)

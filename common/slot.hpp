@@ -35,9 +35,16 @@ class Slot : public ssz::Container {
 
    public:
     constexpr Slot(std::uint64_t s = 0) : value_{s} {};
+    constexpr ~Slot(){};
+    constexpr Slot(const Slot&) = default;
+    constexpr Slot(Slot&&) = default;
+    constexpr Slot& operator=(const Slot&) = default;
+    constexpr Slot& operator=(Slot&&) = default;
+
     operator std::uint64_t() const { return value_; };
-    operator std::uint64_t &() { return value_; }
+    operator std::uint64_t&() { return value_; }
     operator Bytes8() const { return Bytes8{value_}; }
+
     std::vector<std::byte> serialize() const override { return Bytes8(value_).serialize(); }
     bool deserialize(ssz::SSZIterator it, ssz::SSZIterator end) override {
         if (std::distance(it, end) != sizeof(value_)) return false;
@@ -45,11 +52,20 @@ class Slot : public ssz::Container {
         return true;
     }
 
-    bool operator==(const Slot &) const = default;
+    bool operator==(const Slot&) const = default;
     static constexpr std::size_t ssz_size = 8;
     std::size_t get_ssz_size() const override { return ssz_size; }
 
     YAML::Node encode() const override { return YAML::convert<std::uint64_t>::encode(value_); }
-    bool decode(const YAML::Node &node) override { return YAML::convert<std::uint64_t>::decode(node, value_); }
+    bool decode(const YAML::Node& node) override { return YAML::convert<std::uint64_t>::decode(node, value_); }
 };
+
+using Epoch = Slot;
+using Counter = Slot;
+using UnixTime = Slot;
+using CommitteeIndex = Slot;
+using ValidatorIndex = Slot;
+using DepositIndex = Slot;
+using Gwei = Slot;
+
 }  // namespace eth

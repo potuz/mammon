@@ -21,7 +21,8 @@
 
 #pragma once
 
-#include "common/basic_types.hpp"
+#include "common/boolean.hpp"
+#include "common/slot.hpp"
 #include "ssz/ssz_container.hpp"
 
 namespace eth {
@@ -36,6 +37,10 @@ class Validator : public ssz::Container {
    public:
     static constexpr std::size_t ssz_size = 121;
     std::size_t get_ssz_size() const override { return ssz_size; }
+    std::vector<ssz::Chunk> hash_tree() const override {
+        return hash_tree_({&pubkey, &withdrawal_credentials, &effective_balance, &slashed,
+                           &activation_eligibility_epoch, &activation_epoch, &exit_epoch, &withdrawable_epoch});
+    }
     BytesVector serialize() const override {
         return serialize_({&pubkey, &withdrawal_credentials, &effective_balance, &slashed,
                            &activation_eligibility_epoch, &activation_epoch, &exit_epoch, &withdrawable_epoch});

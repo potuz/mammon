@@ -24,7 +24,6 @@
 #include <utility>
 
 #include "attestation.hpp"
-#include "common/basic_types.hpp"
 #include "deposits.hpp"
 #include "eth1data.hpp"
 #include "include/config.hpp"
@@ -40,6 +39,9 @@ struct BeaconBlockHeader : public ssz::Container {
 
     static constexpr std::size_t ssz_size = 112;
     std::size_t get_ssz_size() const override { return ssz_size; }
+    std::vector<ssz::Chunk> hash_tree() const override {
+        return hash_tree_({&slot, &proposer_index, &parent_root, &state_root, &body_root});
+    }
     BytesVector serialize() const override {
         return serialize_({&slot, &proposer_index, &parent_root, &state_root, &body_root});
     }
@@ -73,6 +75,7 @@ struct VoluntaryExit : public ssz::Container {
     static constexpr std::size_t ssz_size = 16;
     std::size_t get_ssz_size() const override { return ssz_size; }
 
+    std::vector<ssz::Chunk> hash_tree() const override { return hash_tree_({&epoch, &validator_index}); }
     BytesVector serialize() const override { return serialize_({&epoch, &validator_index}); }
     bool deserialize(ssz::SSZIterator it, ssz::SSZIterator end) override {
         return deserialize_(it, end, {&epoch, &validator_index});
@@ -92,6 +95,7 @@ struct SignedVoluntaryExit : public ssz::Container {
 
     static constexpr std::size_t ssz_size = 112;
     std::size_t get_ssz_size() const override { return ssz_size; }
+    std::vector<ssz::Chunk> hash_tree() const override { return hash_tree_({&message, &signature}); }
     BytesVector serialize() const override { return serialize_({&message, &signature}); }
     bool deserialize(ssz::SSZIterator it, ssz::SSZIterator end) override {
         return deserialize_(it, end, {&message, &signature});
@@ -114,11 +118,11 @@ class BeaconBlockBody : public ssz::Container {
     Eth1Data eth1_data_;
     Bytes32 graffiti_;
 
-    ListFixedSizedParts<ProposerSlashing> proposer_slashings_;
-    ListVariableSizedParts<AttesterSlashing> attester_slashings_;
-    ListVariableSizedParts<Attestation> attestations_;
-    ListFixedSizedParts<Deposit> deposits_;
-    ListFixedSizedParts<SignedVoluntaryExit> voluntary_exits_;
+    ListFixedSizedParts<ProposerSlashing> proposer_slashings_{constants::MAX_PROPOSER_SLASHINGS};
+    ListVariableSizedParts<AttesterSlashing> attester_slashings_{constants::MAX_ATTESTER_SLASHINGS};
+    ListVariableSizedParts<Attestation> attestations_{constants::MAX_ATTESTATIONS};
+    ListFixedSizedParts<Deposit> deposits_{constants::MAX_DEPOSITS};
+    ListFixedSizedParts<SignedVoluntaryExit> voluntary_exits_{constants::MAX_VOLUNTARY_EXITS};
 
    public:
     constexpr BLSSignature const &randao_reveal() const { return randao_reveal_; }
@@ -138,6 +142,11 @@ class BeaconBlockBody : public ssz::Container {
     void attestations(ListVariableSizedParts<Attestation> &&);
     void deposits(ListFixedSizedParts<Deposit> &&);
     void voluntary_exits(ListFixedSizedParts<SignedVoluntaryExit> &&);
+
+    std::vector<ssz::Chunk> hash_tree() const override {
+        return hash_tree_({&randao_reveal_, &eth1_data_, &graffiti_, &proposer_slashings_, &attester_slashings_,
+                           &attestations_, &deposits_, &voluntary_exits_});
+    }
 
     BytesVector serialize() const override {
         return serialize_({&randao_reveal_, &eth1_data_, &graffiti_, &proposer_slashings_, &attester_slashings_,
@@ -191,6 +200,10 @@ class BeaconBlock : public ssz::Container {
     void state_root(Root &&);
     void body(BeaconBlockBody &&);
 
+    std::vector<ssz::Chunk> hash_tree() const override {
+        return hash_tree_({&slot_, &proposer_index_, &parent_root_, &state_root_, &body_});
+    }
+
     BytesVector serialize() const override {
         return serialize_({&slot_, &proposer_index_, &parent_root_, &state_root_, &body_});
     }
@@ -222,6 +235,7 @@ struct SignedBeaconBlockHeader : public ssz::Container {
 
     static constexpr std::size_t ssz_size = 208;
     std::size_t get_ssz_size() const override { return ssz_size; }
+    std::vector<ssz::Chunk> hash_tree() const override { return hash_tree_({&message, &signature}); }
     BytesVector serialize() const override { return serialize_({&message, &signature}); }
     bool deserialize(ssz::SSZIterator it, ssz::SSZIterator end) override {
         return deserialize_(it, end, {&message, &signature});
@@ -239,6 +253,7 @@ struct ProposerSlashing : public ssz::Container {
 
     static constexpr std::size_t ssz_size = 416;
     std::size_t get_ssz_size() const override { return ssz_size; }
+    std::vector<ssz::Chunk> hash_tree() const override { return hash_tree_({&signed_header_1, &signed_header_2}); }
     BytesVector serialize() const override { return serialize_({&signed_header_1, &signed_header_2}); }
     bool deserialize(ssz::SSZIterator it, ssz::SSZIterator end) override {
         return deserialize_(it, end, {&signed_header_1, &signed_header_2});
@@ -255,6 +270,7 @@ struct ProposerSlashing : public ssz::Container {
 struct AttesterSlashing : public ssz::Container {
     IndexedAttestation attestation_1, attestation_2;
 
+    std::vector<ssz::Chunk> hash_tree() const override { return hash_tree_({&attestation_1, &attestation_2}); }
     BytesVector serialize() const override { return serialize_({&attestation_1, &attestation_2}); }
     bool deserialize(ssz::SSZIterator it, ssz::SSZIterator end) override {
         return deserialize_(it, end, {&attestation_1, &attestation_2});
@@ -272,6 +288,7 @@ struct SignedBeaconBlock : public ssz::Container {
     BeaconBlock message;
     BLSSignature signature;
 
+    std::vector<ssz::Chunk> hash_tree() const override { return hash_tree_({&message, &signature}); }
     BytesVector serialize() const override { return serialize_({&message, &signature}); }
     bool deserialize(ssz::SSZIterator it, ssz::SSZIterator end) override {
         return deserialize_(it, end, {&message, &signature});

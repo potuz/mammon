@@ -21,7 +21,7 @@
 
 #pragma once
 
-#include "common/basic_types.hpp"
+#include "common/slot.hpp"
 #include <cstdint>
 
 using namespace std::string_literals;
@@ -47,7 +47,7 @@ constexpr std::uint64_t MIN_VALIDATOR_WITHDRAWABILITY_DELAY = 256;
 constexpr std::uint64_t SHARD_COMMITTEE_PERIOD = 64;
 constexpr std::uint64_t ETH1_FOLLOW_DISTANCE = 16;
 
-constexpr eth::Gwei EJECTION_BALANCE{16000000000};
+constexpr const eth::Gwei EJECTION_BALANCE{16000000000};
 constexpr std::uint64_t MIN_PER_EPOCH_CHURN_LIMIT = 4;
 constexpr std::uint64_t CHURN_LIMIT_QUOTIENT = 65536;
 
@@ -57,6 +57,7 @@ constexpr eth::Eth1Address DEPOSIT_CONTRACT_ADDRESS {
     "0x1234567890123456789012345678901234567890"};
 
 constexpr auto TEST_VECTORS_PATH = "@CMAKE_SOURCE_DIR@/eth2.0-spec-tests/tests/minimal/phase0/ssz_static/";
+constexpr auto TEST_VECTORS_GENERAL_PATH = "@CMAKE_SOURCE_DIR@/eth2.0-spec-tests/tests/general/phase0/ssz_generic/";
 
 constexpr int DEPOSIT_CONTRACT_TREE_DEPTH = 32;
 constexpr std::uint64_t JUSTIFICATION_BITS_LENGTH = 4;

@@ -24,6 +24,7 @@
 #include <string>
 #include <vector>
 
+#include "ssz/ssz.hpp"
 #include "yaml-cpp/yaml.h"
 
 namespace ssz {
@@ -38,18 +39,22 @@ class Container {
     static bool deserialize_(SSZIterator it, SSZIterator end, const std::vector<Container *> &);
     static YAML::Node encode_(const std::vector<ConstPart> &parts);
     static bool decode_(const YAML::Node &node, std::vector<Part> parts);
+    static std::vector<Chunk> hash_tree_(const std::vector<const Container *> &);
+    virtual std::vector<Chunk> hash_tree() const;
 
    public:
     virtual ~Container() = default;
     Container() = default;
-    Container(Container&&) = default;
-    Container(const Container&) = default;
-    Container& operator=(Container&&) = default;
-    Container& operator=(const Container&) = default;
+    Container(Container &&) = default;
+    Container(const Container &) = default;
+    Container &operator=(Container &&) = default;
+    Container &operator=(const Container &) = default;
 
     virtual std::size_t get_ssz_size() const { return 0; }
     virtual std::vector<std::byte> serialize() const = 0;
     virtual bool deserialize(SSZIterator it, SSZIterator end) = 0;
+
+    Chunk hash_tree_root() const { return this->hash_tree()[0]; }
 
     virtual YAML::Node encode() const = 0;
     virtual bool decode(const YAML::Node &node) = 0;

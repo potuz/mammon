@@ -20,7 +20,6 @@
  */
 
 #pragma once
-#include "common/basic_types.hpp"
 #include "ssz/ssz_container.hpp"
 #include "yaml-cpp/yaml.h"
 
@@ -32,6 +31,9 @@ struct Eth1Data : public ssz::Container {
 
     static constexpr std::size_t ssz_size = 72;
     std::size_t get_ssz_size() const override { return ssz_size; }
+    std::vector<ssz::Chunk> hash_tree() const override {
+        return hash_tree_({&deposit_root, &deposit_count, &block_hash});
+    }
     BytesVector serialize() const override { return serialize_({&deposit_root, &deposit_count, &block_hash}); }
     bool deserialize(ssz::SSZIterator it, ssz::SSZIterator end) override {
         return deserialize_(it, end, {&deposit_root, &deposit_count, &block_hash});
