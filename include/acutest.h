@@ -241,7 +241,7 @@
  * You may define another limit prior including "acutest.h"
  */
 #ifndef TEST_DUMP_MAXSIZE
-    #define TEST_DUMP_MAXSIZE   20000
+    #define TEST_DUMP_MAXSIZE   1024
 #endif
 
 

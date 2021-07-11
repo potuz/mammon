@@ -20,9 +20,16 @@
  */
 
 #pragma once
+#include <algorithm>
+#include <array>
+#include <bit>
+#include <climits>
 #include <cmath>
+#include <concepts>
+#include <utility>
 
-namespace eth {
+namespace helpers {
+
 template <typename T>
 constexpr T sqrt_helper(T x, T lo, T hi) {
     if (lo == hi) return lo;
@@ -49,4 +56,7 @@ T integer_squareroot(T x) {
 
     return r;
 }
-}  // namespace eth
+
+int log2ceil(std::unsigned_integral auto n) { return n ? CHAR_BIT * sizeof(n) - std::countl_zero(n - 1) : 0; }
+
+}  // namespace helpers

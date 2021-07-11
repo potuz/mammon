@@ -27,7 +27,7 @@ if(MINIMAL)
 	configure_file(config/minimal.hpp.in "${CMAKE_SOURCE_DIR}/include/config.hpp")
 else()
 	message(STATUS "Running mainnet config")
-	configure_file(config/mainnet.hpp.in include/config.hpp)
+	configure_file(config/mainnet.hpp.in "${CMAKE_SOURCE_DIR}/include/config.hpp")
 endif()
 
 option(TIDY "Analyze the code with clang-tidy")
@@ -38,26 +38,26 @@ endif()
 
 add_executable (beacon-chain
         common/bitlist.cpp
+	ssz/hashtree.cpp
         ssz/ssz_container.cpp
-        beacon-chain/beacon_block.cpp
 	beacon-chain/main.cpp
 	)
 
 
 target_include_directories(beacon-chain PUBLIC
-			   "${CMAKE_SOURCE_DIR}/include"
-			  )
+			   "${CMAKE_SOURCE_DIR}/include")
 
 
 target_link_libraries(beacon-chain
+	 	      crypto
                       snappy
                       yaml-cpp)
 
 add_executable(test_ssz
-                common/bitlist.cpp
-                beacon-chain/beacon_block.cpp
                 ssz/ssz_container.cpp
 	 	beacon-chain/test/test_ssz.cpp
+                common/bitlist.cpp
+                ssz/hashtree.cpp
 		)
 
 target_include_directories(test_ssz PUBLIC
@@ -65,11 +65,13 @@ target_include_directories(test_ssz PUBLIC
 			  )
 
 target_link_libraries(test_ssz
+                      crypto
                       snappy
                       yaml-cpp)
 
 add_executable(test_bytes
                 ssz/ssz_container.cpp
+                ssz/hashtree.cpp
                 common/bytes_test.cpp)
 
 target_include_directories(test_bytes PUBLIC
@@ -77,6 +79,7 @@ target_include_directories(test_bytes PUBLIC
 			  )
 
 target_link_libraries(test_bytes
+		      crypto
                       yaml-cpp)
 enable_testing()
 

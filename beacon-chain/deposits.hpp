@@ -22,7 +22,6 @@
 #pragma once
 #include <numeric>
 
-#include "common/basic_types.hpp"
 #include "common/containers.hpp"
 #include "include/config.hpp"
 #include "ssz/ssz_container.hpp"
@@ -36,6 +35,9 @@ struct DepositMessage : public ssz::Container {
 
     static constexpr std::size_t ssz_size = 88;
     std::size_t get_ssz_size() const override { return ssz_size; }
+    std::vector<ssz::Chunk> hash_tree() const override {
+        return hash_tree_({&pubkey, &withdrawal_credentials, &amount});
+    }
     BytesVector serialize() const override { return serialize_({&pubkey, &withdrawal_credentials, &amount}); }
     bool deserialize(ssz::SSZIterator it, ssz::SSZIterator end) override {
         return deserialize_(it, end, {&pubkey, &withdrawal_credentials, &amount});
@@ -58,6 +60,10 @@ struct DepositData : public ssz::Container {
 
     static constexpr std::size_t ssz_size = 184;
     std::size_t get_ssz_size() const override { return ssz_size; }
+
+    std::vector<ssz::Chunk> hash_tree() const override {
+        return hash_tree_({&pubkey, &withdrawal_credentials, &amount, &signature});
+    }
     BytesVector serialize() const override {
         return serialize_({&pubkey, &withdrawal_credentials, &amount, &signature});
     }
@@ -85,6 +91,7 @@ struct Deposit : public ssz::Container {
 
     static constexpr std::size_t ssz_size = 32 * constants::DEPOSIT_CONTRACT_TREE_DEPTH + 216;
     std::size_t get_ssz_size() const override { return ssz_size; }
+    std::vector<ssz::Chunk> hash_tree() const override { return hash_tree_({&proof, &data}); }
     BytesVector serialize() const override { return serialize_({&proof, &data}); }
     bool deserialize(ssz::SSZIterator it, ssz::SSZIterator end) override {
         return deserialize_(it, end, {&proof, &data});

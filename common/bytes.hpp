@@ -43,8 +43,12 @@ class Bytes : public ssz::Container {
 
     // cppcheck-suppress unusedPrivateFunction
     static constexpr auto bytes_from_int(const std::integral auto value) {
-        auto ret = std::bit_cast<std::array<std::byte, N>>(value);
-        if constexpr (std::endian::native == std::endian::big) std::reverse(ret);
+        std::array<std::byte, N> ret{};
+        auto as_bytes = std::bit_cast<std::array<std::byte, sizeof(value)>>(value);
+        if constexpr (std::endian::native == std::endian::big)
+            std::reverse_copy(as_bytes.begin(), as_bytes.end(), ret.begin());
+        else
+            std::copy(as_bytes.begin(), as_bytes.end(), ret.begin());
         return ret;
     }
 
@@ -77,6 +81,7 @@ class Bytes : public ssz::Container {
         if (arr.size() != N) throw std::out_of_range("vector of different size than bytes");
         std::copy_n(arr.cbegin(), N, m_arr.begin());
     }
+    constexpr ~Bytes() = default;
 
     std::vector<std::byte> serialize() const override {
         std::vector<std::byte> ret(m_arr.cbegin(), m_arr.cend());
@@ -111,11 +116,11 @@ class Bytes : public ssz::Container {
     void from_string(const std::string &hex) { m_arr = bytes_from_str(hex); }
 
     // clang-format off
-  template <typename T> requires(std::unsigned_integral<T> && sizeof(T) == N)
-  T to_integer_little_endian() const {
+    template <typename T> requires(std::unsigned_integral<T> && sizeof(T) == N)
+    T to_integer_little_endian() const {
     auto ptr = reinterpret_cast<const T *>(m_arr.data()); // NOLINT
     return *ptr;
-  }
+    }
     // clang-format on
     std::byte &operator[](std::size_t index) { return m_arr[index]; }
 
@@ -177,6 +182,16 @@ using Bytes20 = Bytes<20>;  // NOLINT
 using Bytes32 = Bytes<32>;  // NOLINT
 using Bytes48 = Bytes<48>;  // NOLINT
 using Bytes96 = Bytes<96>;  // NOLINT
-
 using BytesVector = std::vector<std::byte>;
+
+using Hash32 = Bytes32;
+using Root = Bytes32;
+using Version = Bytes4;
+using DomainType = Bytes4;
+using ForkDigest = Bytes4;
+using Domain = Bytes32;
+using BLSPubkey = Bytes48;
+using BLSSignature = Bytes96;
+using Eth1Address = Bytes20;
+
 }  // namespace eth

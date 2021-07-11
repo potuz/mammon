@@ -27,6 +27,7 @@
 
 #include "common/bytes.hpp"
 #include "helpers/bytes_to_int.hpp"
+#include "ssz/hashtree.hpp"
 #include "ssz/ssz.hpp"
 
 template <typename T>
@@ -102,6 +103,23 @@ bool Container::deserialize_(SSZIterator it, SSZIterator end, const std::vector<
     if (last_offset)
         if (!last_variable_part->deserialize(begin + last_offset, end)) return false;
     return true;
+}
+
+std::vector<Chunk> Container::hash_tree() const {
+    HashTree hash_tree{this->serialize()};
+    return hash_tree.hash_tree();
+}
+
+std::vector<Chunk> Container::hash_tree_(const std::vector<const Container *> &parts) {
+    // This will throw when accessing hash_tree_root
+    if (parts.size() == 0) return {};
+
+    std::vector<Chunk> chunks;
+    chunks.reserve(parts.size() * sizeof(Chunk));
+    for (auto &part : parts) chunks.push_back(part->hash_tree_root());
+
+    HashTree hash_tree{chunks};
+    return hash_tree.hash_tree();
 }
 
 bool Container::decode_(const YAML::Node &node, std::vector<Part> parts) {

@@ -23,6 +23,8 @@
 
 #include "common/bitlist.hpp"
 #include "common/containers.hpp"
+#include "config.hpp"
+#include "ssz/ssz.hpp"
 #include "yaml-cpp/yaml.h"
 
 namespace eth {
@@ -35,6 +37,9 @@ struct AttestationData : public ssz::Container {
 
     static constexpr std::size_t ssz_size = 128;
     std::size_t get_ssz_size() const override { return ssz_size; }
+    std::vector<ssz::Chunk> hash_tree() const override {
+        return hash_tree_({&slot, &index, &beacon_block_root, &source, &target});
+    }
     BytesVector serialize() const override { return serialize_({&slot, &index, &beacon_block_root, &source, &target}); }
     bool deserialize(ssz::SSZIterator it, ssz::SSZIterator end) override {
         return deserialize_(it, end, {&slot, &index, &beacon_block_root, &source, &target});
@@ -58,10 +63,11 @@ struct AttestationData : public ssz::Container {
 };
 
 struct IndexedAttestation : public ssz::Container {
-    ListFixedSizedParts<ValidatorIndex> attesting_indices;
+    ListFixedSizedParts<ValidatorIndex> attesting_indices{constants::MAX_VALIDATORS_PER_COMMITTEE};
     AttestationData data;
     BLSSignature signature;
 
+    std::vector<ssz::Chunk> hash_tree() const override { return hash_tree_({&attesting_indices, &data, &signature}); }
     BytesVector serialize() const override { return serialize_({&attesting_indices, &data, &signature}); }
     bool deserialize(ssz::SSZIterator it, ssz::SSZIterator end) override {
         return deserialize_(it, end, {&attesting_indices, &data, &signature});
@@ -77,11 +83,14 @@ struct IndexedAttestation : public ssz::Container {
 };
 
 struct PendingAttestation : public ssz::Container {
-    eth::Bitlist aggregation_bits;
+    eth::Bitlist aggregation_bits{constants::MAX_VALIDATORS_PER_COMMITTEE};
     AttestationData data;
     Slot inclusion_delay;
     ValidatorIndex proposer_index;
 
+    std::vector<ssz::Chunk> hash_tree() const override {
+        return hash_tree_({&aggregation_bits, &data, &inclusion_delay, &proposer_index});
+    }
     BytesVector serialize() const override {
         return serialize_({&aggregation_bits, &data, &inclusion_delay, &proposer_index});
     }
@@ -105,10 +114,11 @@ struct PendingAttestation : public ssz::Container {
 };
 
 struct Attestation : public ssz::Container {
-    eth::Bitlist aggregation_bits;
+    eth::Bitlist aggregation_bits{constants::MAX_VALIDATORS_PER_COMMITTEE};
     AttestationData data;
     BLSSignature signature;
 
+    std::vector<ssz::Chunk> hash_tree() const override { return hash_tree_({&aggregation_bits, &data, &signature}); }
     BytesVector serialize() const override { return serialize_({&aggregation_bits, &data, &signature}); }
     bool deserialize(ssz::SSZIterator it, ssz::SSZIterator end) override {
         return deserialize_(it, end, {&aggregation_bits, &data, &signature});

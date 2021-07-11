@@ -81,14 +81,12 @@ class Bitvector : public ssz::Container {
         for (auto const &b : m_bits.m_arr) os << b;
         return os;
     };
-
     std::vector<std::byte> serialize() const override {
         Bytes<(N + constants::BITS_PER_BYTE - 1) / constants::BITS_PER_BYTE> ret{};
         for (int i = 0; i < N; ++i)
             ret[i / constants::BITS_PER_BYTE] |= (std::byte(m_arr[i] << (i % constants::BITS_PER_BYTE)));
         return ret;
     }
-
     bool deserialize(ssz::SSZIterator it, ssz::SSZIterator end) override {
         if (std::distance(it, end) != (N + constants::BITS_PER_BYTE - 1) / constants::BITS_PER_BYTE) return false;
         for (auto i = it; i != end; ++i)
@@ -98,14 +96,12 @@ class Bitvector : public ssz::Container {
                     std::to_integer<unsigned char>(*i & (std::byte(1) << j));
         return true;
     }
-
     bool operator==(const Bitvector &) const = default;
 
     YAML::Node encode() const override {
         auto str = this->to_string();
         return YAML::convert<std::string>::encode(str);
     }
-
     bool decode(const YAML::Node &node) override {
         std::string str;
         if (!YAML::convert<std::string>::decode(node, str)) return false;

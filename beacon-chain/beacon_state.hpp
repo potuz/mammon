@@ -22,7 +22,6 @@
 #pragma once
 #include "beacon-chain/validator.hpp"
 #include "beacon_block.hpp"
-#include "common/basic_types.hpp"
 #include "common/bitlist.hpp"
 #include "common/bitvector.hpp"
 #include "ssz/ssz_container.hpp"
@@ -36,15 +35,18 @@ class BeaconState : public ssz::Container {
     Fork fork_;
     BeaconBlockHeader latest_block_header_;
     VectorFixedSizedParts<Root, constants::SLOTS_PER_HISTORICAL_ROOT> block_roots_, state_roots_;
-    ListFixedSizedParts<Root> historical_roots_;
+    ListFixedSizedParts<Root> historical_roots_{constants::HISTORICAL_ROOTS_LIMIT};
     Eth1Data eth1_data_;
-    ListFixedSizedParts<Eth1Data> eth1_data_votes_;
+    ListFixedSizedParts<Eth1Data> eth1_data_votes_{constants::EPOCHS_PER_ETH1_VOTING_PERIOD *
+                                                   constants::SLOTS_PER_EPOCH};
     DepositIndex eth1_deposit_index_;
-    ListFixedSizedParts<Validator> validators_;
-    ListFixedSizedParts<Gwei> balances_;
+    ListFixedSizedParts<Validator> validators_{constants::VALIDATOR_REGISTRY_LIMIT};
+    ListFixedSizedParts<Gwei> balances_{constants::VALIDATOR_REGISTRY_LIMIT};
     VectorFixedSizedParts<Bytes32, constants::EPOCHS_PER_HISTORICAL_VECTOR> randao_mixes_;
     VectorFixedSizedParts<Gwei, constants::EPOCHS_PER_SLASHINGS_VECTOR> slashings_;
-    ListVariableSizedParts<PendingAttestation> previous_epoch_attestations_, current_epoch_attestations_;
+    ListVariableSizedParts<PendingAttestation> previous_epoch_attestations_{constants::MAX_ATTESTATIONS *
+                                                                            constants::SLOTS_PER_EPOCH},
+        current_epoch_attestations_{constants::MAX_ATTESTATIONS * constants::SLOTS_PER_EPOCH};
     Bitvector<constants::JUSTIFICATION_BITS_LENGTH> justification_bits_;
     Checkpoint previous_justified_checkpoint_, current_justified_checkpoint_, finalized_checkpoint_;
 
@@ -95,6 +97,29 @@ class BeaconState : public ssz::Container {
                 void finalized_checkpoint(Checkpoint);
                 */
 
+    std::vector<ssz::Chunk> hash_tree() const override {
+        return hash_tree_({&genesis_time_,
+                           &genesis_validators_root_,
+                           &slot_,
+                           &fork_,
+                           &latest_block_header_,
+                           &block_roots_,
+                           &state_roots_,
+                           &historical_roots_,
+                           &eth1_data_,
+                           &eth1_data_votes_,
+                           &eth1_deposit_index_,
+                           &validators_,
+                           &balances_,
+                           &randao_mixes_,
+                           &slashings_,
+                           &previous_epoch_attestations_,
+                           &current_epoch_attestations_,
+                           &justification_bits_,
+                           &previous_justified_checkpoint_,
+                           &current_justified_checkpoint_,
+                           &finalized_checkpoint_});
+    }
     BytesVector serialize() const override {
         return serialize_({&genesis_time_,
                            &genesis_validators_root_,

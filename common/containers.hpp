@@ -20,7 +20,12 @@
  */
 
 #pragma once
-#include "common/basic_types.hpp"
+#include <cmath>
+#include <cstddef>
+#include <cstdint>
+
+#include "common/slot.hpp"
+#include "ssz/hashtree.hpp"
 #include "ssz/ssz.hpp"
 #include "ssz/ssz_container.hpp"
 #include "yaml-cpp/yaml.h"
@@ -28,10 +33,26 @@
 namespace eth
 
 {
+template <class T>
+concept BasicObject = std::unsigned_integral<T> || std::is_same_v<T, Slot>;
+
 template <class T, std::size_t N>
 class VectorFixedSizedParts : public ssz::Container {
    private:
     std::array<T, N> m_arr;
+
+   protected:
+    std::vector<ssz::Chunk> hash_tree_x() const requires BasicObject<T> { return ssz::Container::hash_tree(); }
+
+    std::vector<ssz::Chunk> hash_tree_x() const requires(!BasicObject<T>) {
+        std::vector<ssz::Chunk> chunks{};
+        chunks.reserve(m_arr.size() * sizeof(ssz::Chunk));
+        for (auto &part : m_arr) chunks.push_back(part.hash_tree_root());
+        ssz::HashTree ht{chunks};
+        return ht.hash_tree();
+    }
+
+    std::vector<ssz::Chunk> hash_tree() const override { return hash_tree_x(); }
 
    public:
     static constexpr std::size_t ssz_size = N * T::ssz_size;
@@ -72,8 +93,34 @@ template <class T>
 class ListFixedSizedParts : public ssz::Container {
    private:
     std::vector<T> m_arr;
+    std::size_t limit_;
+
+   protected:
+    std::vector<ssz::Chunk> hash_tree_x() const requires BasicObject<T> {
+        auto ser = this->serialize();
+        auto limit = (limit_ * T::ssz_size + constants::BYTES_PER_CHUNK - 1) / constants::BYTES_PER_CHUNK;
+        ssz::HashTree ht{ser, limit};
+        ht.mix_in(m_arr.size());
+        return ht.hash_tree();
+    }
+
+    std::vector<ssz::Chunk> hash_tree_x() const requires(!BasicObject<T>) {
+        std::vector<ssz::Chunk> chunks{};
+        chunks.reserve(m_arr.size() * sizeof(ssz::Chunk));
+        for (auto &part : m_arr) chunks.push_back(part.hash_tree_root());
+        if (chunks.empty()) {
+            ssz::Chunk chunk{};
+            chunks.push_back(chunk);
+        }
+        ssz::HashTree ht{chunks, limit_};
+        ht.mix_in(m_arr.size());
+        return ht.hash_tree();
+    }
+
+    std::vector<ssz::Chunk> hash_tree() const override { return hash_tree_x(); }
 
    public:
+    ListFixedSizedParts(std::size_t limit = 0) : limit_{limit} {};
     std::size_t size(void) const { return m_arr.size(); }
 
     constexpr typename std::vector<T>::iterator begin() noexcept { return m_arr.begin(); }
@@ -83,6 +130,8 @@ class ListFixedSizedParts : public ssz::Container {
     constexpr typename std::vector<T>::iterator end() noexcept { return m_arr.end(); }
 
     constexpr typename std::vector<T>::const_iterator cend() const noexcept { return m_arr.cend(); }
+
+    void limit(std::size_t limit) { limit_ = limit; }
 
     BytesVector serialize() const override {
         BytesVector ret;
@@ -104,7 +153,6 @@ class ListFixedSizedParts : public ssz::Container {
         }
         return true;
     }
-
     YAML::Node encode() const override { return YAML::convert<std::vector<T>>::encode(m_arr); }
     bool decode(const YAML::Node &node) override { return YAML::convert<std::vector<T>>::decode(node, m_arr); }
 };
@@ -113,18 +161,28 @@ template <class T>
 class ListVariableSizedParts : public ssz::Container {
    private:
     std::vector<T> m_arr;
+    std::size_t limit_;
 
    public:
+    ListVariableSizedParts(std::size_t limit = 0) : limit_{limit} {};
+
     std::size_t size(void) const { return m_arr.size(); }
-
     constexpr typename std::vector<T>::iterator begin() noexcept { return m_arr.begin(); }
-
     constexpr typename std::vector<T>::const_iterator cbegin() const noexcept { return m_arr.cbegin(); }
-
     constexpr typename std::vector<T>::iterator end() noexcept { return m_arr.end(); }
-
     constexpr typename std::vector<T>::const_iterator cend() const noexcept { return m_arr.cend(); }
-
+    std::vector<ssz::Chunk> hash_tree() const override {
+        std::vector<ssz::Chunk> chunks{};
+        chunks.reserve(m_arr.size() * sizeof(ssz::Chunk));
+        for (auto &part : m_arr) chunks.push_back(part.hash_tree_root());
+        if (chunks.empty()) {
+            ssz::Chunk chunk{};
+            chunks.push_back(chunk);
+        }
+        ssz::HashTree ht{chunks, limit_};
+        ht.mix_in(m_arr.size());
+        return ht.hash_tree();
+    }
     BytesVector serialize() const override {
         BytesVector offsets, ret;
         std::uint32_t offset = size() * constants::BYTES_PER_LENGTH_OFFSET;
@@ -179,6 +237,11 @@ struct Fork : public ssz::Container {
 
     static constexpr std::size_t ssz_size = 16;
     std::size_t get_ssz_size() const override { return ssz_size; }
+
+    std::vector<ssz::Chunk> hash_tree() const override {
+        return hash_tree_({&previous_version, &current_version, &epoch});
+    }
+
     BytesVector serialize() const override { return serialize_({&previous_version, &current_version, &epoch}); }
 
     bool deserialize(ssz::SSZIterator it, ssz::SSZIterator end) override {
@@ -204,6 +267,11 @@ struct ForkData : public ssz::Container {
 
     static constexpr std::size_t ssz_size = 36;
     std::size_t get_ssz_size() const override { return ssz_size; }
+
+    std::vector<ssz::Chunk> hash_tree() const override {
+        return hash_tree_({&current_version, &genesis_validators_root});
+    }
+
     BytesVector serialize() const override { return serialize_({&current_version, &genesis_validators_root}); }
 
     bool deserialize(ssz::SSZIterator it, ssz::SSZIterator end) override {
@@ -226,6 +294,7 @@ struct Checkpoint : public ssz::Container {
 
     static constexpr std::size_t ssz_size = 40;
     std::size_t get_ssz_size() const override { return ssz_size; }
+    std::vector<ssz::Chunk> hash_tree() const override { return hash_tree_({&epoch, &root}); }
     BytesVector serialize() const override { return serialize_({&epoch, &root}); }
     bool deserialize(ssz::SSZIterator it, ssz::SSZIterator end) override {
         return deserialize_(it, end, {&epoch, &root});
@@ -242,6 +311,8 @@ struct SigningData : public ssz::Container {
 
     static constexpr std::size_t ssz_size = 64;
     std::size_t get_ssz_size() const override { return ssz_size; }
+
+    std::vector<ssz::Chunk> hash_tree() const override { return hash_tree_({&object_root, &domain}); }
     BytesVector serialize() const override { return serialize_({&object_root, &domain}); }
     bool deserialize(ssz::SSZIterator it, ssz::SSZIterator end) override {
         return deserialize_(it, end, {&object_root, &domain});

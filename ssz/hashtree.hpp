@@ -1,4 +1,4 @@
-/*  basic_types.h
+/*  hashtree.hpp
  *
  *  This file is part of Mammon.
  *  mammon is a greedy and selfish ETH consensus client.
@@ -20,29 +20,31 @@
  */
 
 #pragma once
-#include "boolean.hpp"
-#include "slot.hpp"
 
-namespace eth {
-using Epoch = Slot;
-using Counter = Slot;
-using UnixTime = Slot;
-using CommitteeIndex = Slot;
-using ValidatorIndex = Slot;
-using DepositIndex = Slot;
-using Gwei = Slot;
+#include <array>
+#include <cstddef>
+#include <cstring>
+#include <vector>
 
-using Root = Bytes32;
-using Hash32 = Bytes32;
+#include "ssz/ssz.hpp"
 
-using Version = Bytes4;
-using DomainType = Bytes4;
-using ForkDigest = Bytes4;
+namespace ssz {
+using Chunk = std::array<std::byte, constants::BYTES_PER_CHUNK>;
 
-using Domain = Bytes32;
+class HashTree {
+   private:
+    std::vector<Chunk> hash_tree_;
+    int depth_, effective_depth_;
+    std::size_t effective_start_, inner_limit_, cache_size_;
+    const Chunk& hash_node(const std::vector<Chunk>& vec, std::size_t idx);
 
-using BLSPubkey = Bytes48;
-using BLSSignature = Bytes96;
+   public:
+    HashTree(const std::vector<Chunk>& chunks, std::uint64_t limit = 0);
+    HashTree(const std::vector<std::byte>& vec, std::uint64_t limit = 0);
 
-using Eth1Address = Bytes20;
-}  // namespace eth
+    void mix_in(std::size_t length);
+    std::vector<Chunk>& hash_tree() { return hash_tree_; }
+    Chunk hash_tree_root() const { return hash_tree_[0]; }
+};
+
+}  // namespace ssz

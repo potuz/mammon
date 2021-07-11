@@ -30,6 +30,10 @@ namespace eth {
 class Bitlist : public ssz::Container {
    private:
     std::vector<bool> m_arr;
+    std::size_t limit_;
+
+   protected:
+    std::vector<ssz::Chunk> hash_tree() const override;
 
    public:
     friend std::ostream &operator<<(std::ostream &os, const Bitlist &m_bits) {
@@ -37,6 +41,8 @@ class Bitlist : public ssz::Container {
         return os;
     };
 
+    Bitlist(std::size_t limit = 0) : limit_{limit} {};
+    void limit(std::size_t limit) { limit_ = limit; }
     void from_hexstring(std::string str);
     std::string to_string() const;
     std::size_t size() const { return m_arr.size(); }
