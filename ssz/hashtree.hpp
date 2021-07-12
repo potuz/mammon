@@ -29,8 +29,6 @@
 #include "ssz/ssz.hpp"
 
 namespace ssz {
-using Chunk = std::array<std::byte, constants::BYTES_PER_CHUNK>;
-
 class HashTree {
    private:
     std::vector<Chunk> hash_tree_;
