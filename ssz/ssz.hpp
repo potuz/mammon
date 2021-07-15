@@ -30,5 +30,5 @@ constexpr unsigned int BITS_PER_BYTE = 8;
 }  // namespace constants
 
 namespace ssz {
-using Chunk = std::array<std::byte, constants::BYTES_PER_CHUNK>;
+using Chunk = std::array<std::uint8_t, constants::BYTES_PER_CHUNK>;
 }

@@ -22,65 +22,57 @@
 #include "bitlist.hpp"
 
 #include <bit>
+#include <cstdint>
 #include <iomanip>
 #include <iostream>
 #include <sstream>
 
 #include "config.hpp"
+#include "helpers/bytes_to_int.hpp"
 #include "ssz/hashtree.hpp"
 
 namespace eth {
 std::vector<ssz::Chunk> Bitlist::hash_tree() const {
     using namespace constants;
-    std::vector<std::byte> ret((m_arr.size() + BITS_PER_BYTE - 1) / BITS_PER_BYTE, std::byte(0));
-    for (int i = 0; i < m_arr.size(); ++i)
-        ret[i / constants::BITS_PER_BYTE] |= std::byte(static_cast<unsigned char>(m_arr[i] << (i % BITS_PER_BYTE)));
+    std::vector<std::uint8_t> ret((m_arr.size() + BITS_PER_BYTE - 1) / BITS_PER_BYTE, 0);
+    for (int i = 0; i < m_arr.size(); ++i) ret[i / constants::BITS_PER_BYTE] |= m_arr[i] << (i % BITS_PER_BYTE);
     auto limit = (limit_ + BITS_PER_BYTE * BYTES_PER_CHUNK - 1) / (BITS_PER_BYTE * BYTES_PER_CHUNK);
     ssz::HashTree ht{ret, limit};
     ht.mix_in(m_arr.size());
     return ht.hash_tree();
 }
 
-std::vector<std::byte> Bitlist::serialize() const {
-    std::vector<std::byte> ret(m_arr.size() / constants::BITS_PER_BYTE + 1, std::byte(0));
+std::vector<std::uint8_t> Bitlist::serialize() const {
+    std::vector<std::uint8_t> ret(m_arr.size() / constants::BITS_PER_BYTE + 1, 0);
     for (int i = 0; i < m_arr.size(); ++i)
-        ret[i / constants::BITS_PER_BYTE] |=
-            std::byte(static_cast<unsigned char>(m_arr[i] << (i % constants::BITS_PER_BYTE)));
-    ret.back() |= std::byte(1 << (m_arr.size() % constants::BITS_PER_BYTE));
+        ret[i / constants::BITS_PER_BYTE] |= m_arr[i] << (i % constants::BITS_PER_BYTE);
+    ret.back() |= 1 << (m_arr.size() % constants::BITS_PER_BYTE);
     return ret;
 }
 bool Bitlist::deserialize(ssz::SSZIterator it, ssz::SSZIterator end) {
     auto last = end;
     --last;
-
-    int msb = std::countl_zero(static_cast<unsigned char>(*last));
+    int msb = std::countl_zero(*last);
     m_arr.clear();
 
     for (auto i = it; i != last; ++i)
-        for (int j = 0; j < constants::BITS_PER_BYTE; ++j)
-            m_arr.push_back(std::to_integer<unsigned char>((*i >> j) & std::byte(1)));
+        for (auto j = 0; j < constants::BITS_PER_BYTE; ++j) m_arr.push_back((*i >> j) & 1);
 
-    for (int i = 0; i < constants::BITS_PER_BYTE - 1 - msb; ++i)
-        m_arr.push_back(std::to_integer<unsigned char>((*last >> i) & std::byte(1)));
+    for (auto i = 0; i < constants::BITS_PER_BYTE - 1 - msb; ++i) m_arr.push_back((*last >> i) & 1);
     return true;
 }
 
 // Does not check for errors, assumes strings is 0x valid hex bytes! In
 // particular even # of chars
-void Bitlist::from_hexstring(std::string str) {
+void Bitlist::from_hexstring(const std::string& str) {
     if (!str.starts_with("0x")) throw std::invalid_argument("string not prepended with 0x");
-    str.erase(0, 2);
+    if (str.length() % 2 != 0) throw std::invalid_argument("string of odd length");
 
-    // The most significant bit is the length of the bitlist and it's not to be
-    // counted
-    std::stringstream ss;
-    unsigned int buffer = 0;
-    std::vector<std::byte> hex;
-    for (int offset = 0; offset < str.length(); offset += 2) {
-        ss.clear();
-        ss << std::hex << str.substr(offset, 2);
-        ss >> buffer;
-        hex.push_back(static_cast<std::byte>(buffer));
+    std::uint8_t buffer = 0;
+    std::vector<std::uint8_t> hex;
+    for (int offset = 2; offset < str.length(); offset += 2) {
+        buffer = (helpers::hextoint(str[offset]) << 4) + helpers::hextoint(str[offset + 1]);
+        hex.push_back(buffer);
     }
     deserialize(hex.begin(), hex.end());
 }
@@ -90,8 +82,7 @@ std::string Bitlist::to_string() const {
     std::ios_base::fmtflags save = std::cout.flags();
     auto serial = this->serialize();
     os << "0x";
-    for (auto i = serial.cbegin(); i != serial.cend(); ++i)
-        os << std::setfill('0') << std::setw(2) << std::hex << std::to_integer<int>(*i);
+    for (auto i = serial.cbegin(); i != serial.cend(); ++i) os << std::setfill('0') << std::setw(2) << std::hex << *i;
     std::cout.flags(save);
     return os.str();
 };
@@ -100,7 +91,7 @@ YAML::Node Bitlist::encode() const {
     auto str = this->to_string();
     return YAML::convert<std::string>::encode(str);
 }
-bool Bitlist::decode(const YAML::Node &node) {
+bool Bitlist::decode(const YAML::Node& node) {
     std::string str;
     if (!YAML::convert<std::string>::decode(node, str)) return false;
     this->from_hexstring(str);

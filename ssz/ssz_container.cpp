@@ -45,7 +45,7 @@ std::uint32_t compute_fixed_length(const std::vector<T *> &parts) {
 }
 
 namespace ssz {
-std::vector<std::byte> Container::serialize_(const std::vector<const Container *> &parts) {
+std::vector<std::uint8_t> Container::serialize_(const std::vector<const Container *> &parts) {
     // Check if we are one of the basic types
     if (parts.size() == 0) return {};
 
@@ -53,7 +53,7 @@ std::vector<std::byte> Container::serialize_(const std::vector<const Container *
     auto fixed_length = compute_fixed_length(parts);
 
     // Insert the fixed parts and the offsets
-    std::vector<std::byte> ret, variable_part;
+    std::vector<std::uint8_t> ret, variable_part;
     for (auto *part : parts) {
         auto part_ssz = part->serialize();
         if (part->get_ssz_size() == 0) {
@@ -116,8 +116,9 @@ std::vector<Chunk> Container::hash_tree_(const std::vector<const Container *> &p
 
     std::vector<Chunk> chunks;
     chunks.reserve(parts.size() * sizeof(Chunk));
-    std::transform(parts.begin(), parts.end(), std::back_inserter(chunks), [](const Container * part) -> auto { 
-            return part->hash_tree_root(); });
+    std::transform(
+        parts.begin(), parts.end(), std::back_inserter(chunks),
+        [](const Container *part) -> auto { return part->hash_tree_root(); });
 
     HashTree hash_tree{chunks};
     return hash_tree.hash_tree();

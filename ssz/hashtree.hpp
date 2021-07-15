@@ -38,7 +38,7 @@ class HashTree {
 
    public:
     explicit HashTree(const std::vector<Chunk>& chunks, std::uint64_t limit = 0);
-    explicit HashTree(const std::vector<std::byte>& vec, std::uint64_t limit = 0);
+    explicit HashTree(const std::vector<std::uint8_t>& vec, std::uint64_t limit = 0);
 
     void mix_in(std::size_t length);
     std::vector<Chunk>& hash_tree() { return hash_tree_; }

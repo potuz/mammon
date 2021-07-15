@@ -44,22 +44,16 @@ class Bitvector : public ssz::Container {
     Bitvector() = default;
     explicit constexpr Bitvector(std::array<bool, N> vec) : m_arr{vec} {};
 
-    void from_hexstring(std::string str) {
+    void from_hexstring(const std::string &str) {
         if (!str.starts_with("0x")) throw std::invalid_argument("string not prepended with 0x");
-        str.erase(0, 2);
+        if (str.length() % 2 != 0) throw std::invalid_argument("string of odd length");
 
-        if (4 * str.length() > N + 4) throw std::invalid_argument("hexstring larger than bitvector length");
-
-        std::stringstream ss;
-        unsigned int buffer = 0;
-        std::vector<unsigned char> hex;
-        for (int offset = 0; offset < str.length(); offset += 2) {
-            ss.clear();
-            ss << std::hex << str.substr(offset, 2);
-            ss >> buffer;
-            hex.push_back(static_cast<unsigned char>(buffer));
+        std::uint8_t buffer = 0;
+        std::vector<std::uint8_t> hex;
+        for (int offset = 2; offset < str.length(); offset += 2) {
+            buffer = (helpers::hextoint(str[offset]) << 4) + helpers::hextoint(str[offset + 1]);
+            hex.push_back(buffer);
         }
-
         m_arr.fill(0);
         for (int i = 0; i < hex.size(); ++i)
             for (int j = 0; j < constants::BITS_PER_BYTE && constants::BITS_PER_BYTE * i + j < N; ++j)
@@ -72,7 +66,7 @@ class Bitvector : public ssz::Container {
         auto serial = this->serialize();
         os << "0x";
         for (auto i = serial.cbegin(); i != serial.cend(); ++i)
-            os << std::setfill('0') << std::setw(2) << std::hex << std::to_integer<int>(*i);
+            os << std::setfill('0') << std::setw(2) << std::hex << *i;
         std::cout.flags(save);
         return os.str();
     };
@@ -81,10 +75,9 @@ class Bitvector : public ssz::Container {
         for (auto const &b : m_bits.m_arr) os << b;
         return os;
     };
-    std::vector<std::byte> serialize() const override {
+    std::vector<std::uint8_t> serialize() const override {
         Bytes<(N + constants::BITS_PER_BYTE - 1) / constants::BITS_PER_BYTE> ret{};
-        for (int i = 0; i < N; ++i)
-            ret[i / constants::BITS_PER_BYTE] |= (std::byte(m_arr[i] << (i % constants::BITS_PER_BYTE)));
+        for (int i = 0; i < N; ++i) ret[i / constants::BITS_PER_BYTE] |= m_arr[i] << (i % constants::BITS_PER_BYTE);
         return ret;
     }
     bool deserialize(ssz::SSZIterator it, ssz::SSZIterator end) override {
@@ -92,8 +85,7 @@ class Bitvector : public ssz::Container {
         for (auto i = it; i != end; ++i)
             for (int j = 0; j < constants::BITS_PER_BYTE && constants::BITS_PER_BYTE * std::distance(it, i) + j < N;
                  ++j)
-                m_arr[constants::BITS_PER_BYTE * std::distance(it, i) + j] =
-                    std::to_integer<unsigned char>(*i & (std::byte(1) << j));
+                m_arr[constants::BITS_PER_BYTE * std::distance(it, i) + j] = *i & (1 << j);
         return true;
     }
     bool operator==(const Bitvector &) const = default;

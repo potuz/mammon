@@ -38,7 +38,7 @@ class Boolean : public ssz::Container {
     operator bool() const { return value_; };
     operator bool &() { return value_; }
     operator Bytes1() const { return Bytes1{std::uint8_t(value_)}; }
-    std::vector<std::byte> serialize() const override { return Bytes1(value_).serialize(); }
+    std::vector<std::uint8_t> serialize() const override { return Bytes1(value_).serialize(); }
     bool deserialize(ssz::SSZIterator it, ssz::SSZIterator end) override {
         if (std::distance(it, end) != 1) return false;
         auto muint = helpers::to_integer_little_endian<std::uint8_t>(&*it);

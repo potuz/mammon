@@ -59,7 +59,7 @@ namespace helpers {
 
 // The caller is responsible to check the bounds
 template <typename T>
-requires(std::unsigned_integral<T>) T to_integer_little_endian(const std::byte *arr) {
+requires(std::unsigned_integral<T>) T to_integer_little_endian(const std::uint8_t *arr) {
     auto ptr = reinterpret_cast<const T *>(arr);
     return *ptr;
 }
@@ -71,5 +71,4 @@ constexpr int strhex2int(std::string_view const &str) {
     for (int i(str.size() - 1), j(1); i >= 0; --i, j *= 16) ret += (hextoint(str[i]) * j);
     return ret;
 }
-
 }  // namespace helpers

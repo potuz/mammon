@@ -31,11 +31,11 @@ namespace ssz {
 class Container;
 using Part = std::pair<std::string, Container *>;
 using ConstPart = std::pair<std::string, const Container *>;
-using SSZIterator = std::vector<std::byte>::iterator;
+using SSZIterator = std::vector<std::uint8_t>::iterator;
 
 class Container {
    protected:
-    static std::vector<std::byte> serialize_(const std::vector<const Container *> &);
+    static std::vector<std::uint8_t> serialize_(const std::vector<const Container *> &);
     static bool deserialize_(SSZIterator it, SSZIterator end, const std::vector<Container *> &);
     static YAML::Node encode_(const std::vector<ConstPart> &parts);
     static bool decode_(const YAML::Node &node, std::vector<Part> parts);
@@ -51,7 +51,7 @@ class Container {
     Container &operator=(const Container &) = default;
 
     virtual std::size_t get_ssz_size() const { return 0; }
-    virtual std::vector<std::byte> serialize() const = 0;
+    virtual std::vector<std::uint8_t> serialize() const = 0;
     virtual bool deserialize(SSZIterator it, SSZIterator end) = 0;
 
     Chunk hash_tree_root() const { return this->hash_tree()[0]; }

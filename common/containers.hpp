@@ -175,8 +175,8 @@ class ListVariableSizedParts : public ssz::Container {
     std::vector<ssz::Chunk> hash_tree() const override {
         std::vector<ssz::Chunk> chunks{};
         chunks.reserve(m_arr.size() * sizeof(ssz::Chunk));
-        std::transform(m_arr.begin(), m_arr.end(), std::back_inserter(chunks), [](const T& part) {
-                return part.hash_tree_root();});
+        std::transform(m_arr.begin(), m_arr.end(), std::back_inserter(chunks),
+                       [](const T &part) { return part.hash_tree_root(); });
         if (chunks.empty()) {
             ssz::Chunk chunk{};
             chunks.push_back(chunk);

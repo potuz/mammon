@@ -45,7 +45,7 @@ class Slot : public ssz::Container {
     operator std::uint64_t&() { return value_; }
     operator Bytes8() const { return Bytes8{value_}; }
 
-    std::vector<std::byte> serialize() const override { return Bytes8(value_).serialize(); }
+    std::vector<std::uint8_t> serialize() const override { return Bytes8(value_).serialize(); }
     bool deserialize(ssz::SSZIterator it, ssz::SSZIterator end) override {
         if (std::distance(it, end) != sizeof(value_)) return false;
         value_ = helpers::to_integer_little_endian<std::uint64_t>(&*it);

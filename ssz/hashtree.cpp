@@ -32,17 +32,17 @@ namespace {
 using namespace ssz;
 constexpr Chunk zero_hash{};
 
-Chunk hash_2_chunks(const std::byte* data) {
+Chunk hash_2_chunks(const std::uint8_t* data) {
     Chunk ret{};
     SHA256_CTX sha256;
     SHA256_Init(&sha256);
     SHA256_Update(&sha256, data, 2 * constants::BYTES_PER_CHUNK);
-    SHA256_Final(reinterpret_cast<unsigned char*>(ret.data()), &sha256);
+    SHA256_Final(ret.data(), &sha256);
     return ret;
 }
 
 Chunk hash_2_chunks(const Chunk& first, const Chunk& second) {
-    std::vector<std::byte> sum(first.begin(), first.end());
+    std::vector<std::uint8_t> sum(first.begin(), first.end());
     sum.insert(sum.end(), second.begin(), second.end());
     return hash_2_chunks(sum.data());
 }
@@ -63,9 +63,9 @@ const auto zero_hash_array = zero_hash_array_helper<ZERO_HASH_DEPTH>();
 /**
  *   \brief Packs a vector of bytes into chunks of 32 bytes
  *   \details If the length of vec is not a multiple of 32, it pads with null bytes in the end
- *   \param[in] vec  a vector of std::bytes.
+ *   \param[in] vec  a vector of std::uint8_ts.
  */
-std::vector<Chunk> pack_and_pad(const std::vector<std::byte>& vec) {
+std::vector<Chunk> pack_and_pad(const std::vector<std::uint8_t>& vec) {
     std::vector<Chunk> ret{};
     if (vec.empty())
         ret.push_back(zero_hash);
@@ -144,6 +144,6 @@ void HashTree::mix_in(std::size_t length) {
     hash_tree_.insert(hash_tree_.begin(), hash_2_chunks(hash_tree_[0], length_bytes.to_array()));
 }
 
-HashTree::HashTree(const std::vector<std::byte>& vec, std::uint64_t limit) : HashTree{pack_and_pad(vec), limit} {};
+HashTree::HashTree(const std::vector<std::uint8_t>& vec, std::uint64_t limit) : HashTree{pack_and_pad(vec), limit} {};
 
 }  // namespace ssz

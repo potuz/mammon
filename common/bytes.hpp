@@ -39,12 +39,12 @@ namespace eth {
 template <std::size_t N>
 class Bytes : public ssz::Container {
    private:
-    std::array<std::byte, N> m_arr;
+    std::array<std::uint8_t, N> m_arr;
 
     // cppcheck-suppress unusedPrivateFunction
     static constexpr auto bytes_from_int(const std::integral auto value) {
-        std::array<std::byte, N> ret{};
-        auto as_bytes = std::bit_cast<std::array<std::byte, sizeof(value)>>(value);
+        std::array<std::uint8_t, N> ret{};
+        auto as_bytes = std::bit_cast<std::array<std::uint8_t, sizeof(value)>>(value);
         if constexpr (std::endian::native == std::endian::big)
             std::reverse_copy(as_bytes.begin(), as_bytes.end(), ret.begin());
         else
@@ -52,16 +52,16 @@ class Bytes : public ssz::Container {
         return ret;
     }
 
-    static constexpr auto chars_to_byte(std::string_view const &c) -> std::byte {
-        return std::byte(helpers::strhex2int(c));
+    static constexpr auto chars_to_byte(std::string_view const &c) -> std::uint8_t {
+        return std::uint8_t(helpers::strhex2int(c));
     }
 
-    static constexpr auto bytes_from_str(const std::string_view &str) -> std::array<std::byte, N> {
+    static constexpr auto bytes_from_str(const std::string_view &str) -> std::array<std::uint8_t, N> {
         if (!str.starts_with("0x")) throw std::invalid_argument("string not prepended with 0x");
 
         if (str.size() > 2 * N + 2) throw std::out_of_range("integer larger than bytes size");
 
-        std::array<std::byte, N> ret_arr{};
+        std::array<std::uint8_t, N> ret_arr{};
         for (int i = 2; i < str.size(); i += 2) ret_arr[i / 2 - 1] = chars_to_byte(str.substr(i, 2));
         return ret_arr;
     }
@@ -72,19 +72,11 @@ class Bytes : public ssz::Container {
     explicit constexpr Bytes(std::string_view &&hex) : m_arr{bytes_from_str(std::forward<std::string_view>(hex))} {};
     explicit constexpr Bytes(const std::integral auto value) requires(sizeof(value) <= N)
         : m_arr{bytes_from_int(value)} {};
-    explicit constexpr Bytes(std::array<std::byte, N> arr) : m_arr{arr} {};
-    explicit constexpr Bytes(const std::vector<int> &arr) {
-        if (arr.size() != N) throw std::out_of_range("vector of different size than bytes");
-        for (int i = 0; i < N; ++i) m_arr[i] = std::byte(arr[i]);
-    }
-    explicit constexpr Bytes(const std::vector<std::byte> &arr) {
-        if (arr.size() != N) throw std::out_of_range("vector of different size than bytes");
-        std::copy_n(arr.cbegin(), N, m_arr.begin());
-    }
+    explicit constexpr Bytes(std::array<std::uint8_t, N> arr) : m_arr{arr} {};
     constexpr ~Bytes() = default;
 
-    std::vector<std::byte> serialize() const override {
-        std::vector<std::byte> ret(m_arr.cbegin(), m_arr.cend());
+    std::vector<std::uint8_t> serialize() const override {
+        std::vector<std::uint8_t> ret(m_arr.cbegin(), m_arr.cend());
         return ret;
     }
 
@@ -94,21 +86,20 @@ class Bytes : public ssz::Container {
         return true;
     }
 
-    operator std::vector<std::byte>() {
-        std::vector<std::byte> ret(m_arr.begin(), m_arr.end());
+    operator std::vector<std::uint8_t>() {
+        std::vector<std::uint8_t> ret(m_arr.begin(), m_arr.end());
         return ret;
     }
 
-    constexpr std::byte *data() noexcept { return m_arr.data(); }
+    constexpr std::uint8_t *data() noexcept { return m_arr.data(); }
 
-    const std::array<std::byte, N> &to_array() const { return m_arr; }
+    const std::array<std::uint8_t, N> &to_array() const { return m_arr; }
 
     std::string to_string() const {
         std::stringstream os;
         std::ios_base::fmtflags save = std::cout.flags();
         os << "0x";
-        for (auto i = m_arr.cbegin(); i != m_arr.cend(); ++i)
-            os << std::setfill('0') << std::setw(2) << std::hex << std::to_integer<int>(*i);
+        for (auto i = m_arr.cbegin(); i != m_arr.cend(); ++i) os << std::setfill('0') << std::setw(2) << std::hex << *i;
         std::cout.flags(save);
         return os.str();
     };
@@ -122,9 +113,9 @@ class Bytes : public ssz::Container {
     return *ptr;
     }
     // clang-format on
-    std::byte &operator[](std::size_t index) { return m_arr[index]; }
+    std::uint8_t &operator[](std::size_t index) { return m_arr[index]; }
 
-    std::byte operator[](std::size_t index) const { return m_arr[index]; }
+    std::uint8_t operator[](std::size_t index) const { return m_arr[index]; }
 
     void operator^=(Bytes<N> const &b) {
         for (int i = 0; i < N; i++) m_arr[i] ^= b[i];
@@ -136,7 +127,7 @@ class Bytes : public ssz::Container {
         return m_arr == r.to_array();
     }
 
-    constexpr bool operator==(std::vector<std::byte> const &r) const {
+    constexpr bool operator==(std::vector<std::uint8_t> const &r) const {
         if (N != r.size()) return false;
         for (int i = 0; i < N; ++i)
             if (m_arr[i] != r[i]) return false;
@@ -145,7 +136,7 @@ class Bytes : public ssz::Container {
 
     template <std::size_t M>
     Bytes<N + M> operator+(Bytes<M> const &r) const {
-        std::array<std::byte, N + M> ret;
+        std::array<std::uint8_t, N + M> ret;
         std::copy(m_arr.cbegin(), m_arr.cend(), ret.begin());
         std::copy(r.to_array().cbegin(), r.to_array().cend(), ret.begin() + N);
         return Bytes<N + M>(ret);
@@ -155,13 +146,13 @@ class Bytes : public ssz::Container {
     static constexpr std::size_t size() { return N; }
     std::size_t get_ssz_size() const override { return N; }
 
-    constexpr typename std::array<std::byte, N>::iterator begin() noexcept { return m_arr.begin(); }
+    constexpr typename std::array<std::uint8_t, N>::iterator begin() noexcept { return m_arr.begin(); }
 
-    constexpr typename std::array<std::byte, N>::const_iterator cbegin() const noexcept { return m_arr.cbegin(); }
+    constexpr typename std::array<std::uint8_t, N>::const_iterator cbegin() const noexcept { return m_arr.cbegin(); }
 
-    constexpr typename std::array<std::byte, N>::iterator end() noexcept { return m_arr.end(); }
+    constexpr typename std::array<std::uint8_t, N>::iterator end() noexcept { return m_arr.end(); }
 
-    constexpr typename std::array<std::byte, N>::const_iterator cend() const noexcept { return m_arr.cend(); }
+    constexpr typename std::array<std::uint8_t, N>::const_iterator cend() const noexcept { return m_arr.cend(); }
 
     YAML::Node encode() const override {
         auto str = this->to_string();
@@ -182,7 +173,7 @@ using Bytes20 = Bytes<20>;  // NOLINT
 using Bytes32 = Bytes<32>;  // NOLINT
 using Bytes48 = Bytes<48>;  // NOLINT
 using Bytes96 = Bytes<96>;  // NOLINT
-using BytesVector = std::vector<std::byte>;
+using BytesVector = std::vector<std::uint8_t>;
 
 using Hash32 = Bytes32;
 using Root = Bytes32;

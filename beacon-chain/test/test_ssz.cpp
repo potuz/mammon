@@ -59,12 +59,12 @@ void test_ssz(const std::string &&path) {
                     throw std::filesystem::filesystem_error("could not open file", p2.path(), std::error_code());
 
                 const std::size_t size = std::filesystem::file_size(ssz_snappy_path);
-                std::vector<std::byte> content(size);
+                std::vector<std::uint8_t> content(size);
                 // NOLINTNEXTLINE
                 ssz_snappy.read(reinterpret_cast<char *>(content.data()), size);
                 ssz_snappy.close();
 
-                std::vector<std::byte> output(serialized.size());
+                std::vector<std::uint8_t> output(serialized.size());
                 if (!snappy::RawUncompress(reinterpret_cast<char *>(content.data()),  // NOLINT
                                            size,
                                            reinterpret_cast<char *>(output.data())))  // NOLINT

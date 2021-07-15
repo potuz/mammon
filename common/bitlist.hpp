@@ -43,11 +43,11 @@ class Bitlist : public ssz::Container {
 
     Bitlist(std::size_t limit = 0) : limit_{limit} {};
     void limit(std::size_t limit) { limit_ = limit; }
-    void from_hexstring(std::string str);
+    void from_hexstring(const std::string &str);
     std::string to_string() const;
     std::size_t size() const { return m_arr.size(); }
 
-    std::vector<std::byte> serialize() const override;
+    std::vector<std::uint8_t> serialize() const override;
     bool deserialize(ssz::SSZIterator it, ssz::SSZIterator end) override;
     bool operator==(const Bitlist &) const = default;
     YAML::Node encode() const override;
