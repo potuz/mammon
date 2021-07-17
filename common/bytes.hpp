@@ -67,7 +67,7 @@ class Bytes : public ssz::Container {
     }
 
    public:
-    Bytes() : m_arr{} {};
+    constexpr Bytes() : m_arr{} {};
     explicit constexpr Bytes(const std::string_view &hex) : m_arr{bytes_from_str(hex)} {};
     explicit constexpr Bytes(std::string_view &&hex) : m_arr{bytes_from_str(std::forward<std::string_view>(hex))} {};
     explicit constexpr Bytes(const std::integral auto value) requires(sizeof(value) <= N)
@@ -113,9 +113,9 @@ class Bytes : public ssz::Container {
     return *ptr;
     }
     // clang-format on
-    std::uint8_t &operator[](std::size_t index) { return m_arr[index]; }
+    constexpr std::uint8_t &operator[](std::size_t index) const { return m_arr[index]; }
 
-    std::uint8_t operator[](std::size_t index) const { return m_arr[index]; }
+    constexpr std::uint8_t operator[](std::size_t index) const { return m_arr[index]; }
 
     void operator^=(Bytes<N> const &b) {
         for (int i = 0; i < N; i++) m_arr[i] ^= b[i];
@@ -144,7 +144,7 @@ class Bytes : public ssz::Container {
 
     static constexpr std::size_t ssz_size = N;
     static constexpr std::size_t size() { return N; }
-    std::size_t get_ssz_size() const override { return N; }
+    constexpr std::size_t get_ssz_size() const override { return N; }
 
     constexpr typename std::array<std::uint8_t, N>::iterator begin() noexcept { return m_arr.begin(); }
 

@@ -45,6 +45,13 @@ class Slot : public ssz::Container {
     operator std::uint64_t&() { return value_; }
     operator Bytes8() const { return Bytes8{value_}; }
 
+    std::vector<ssz::Chunk> hash_tree() const override {
+        ssz::Chunk chunk{};
+        std::memcpy(chunk.begin(), &value_, ssz_size);
+        if constexpr (std::endian::native == std::endian::big) std::reverse(chunk.begin(), chunk.begin() + ssz_size);
+        return {chunk};
+    }
+
     std::vector<std::uint8_t> serialize() const override { return Bytes8(value_).serialize(); }
     bool deserialize(ssz::SSZIterator it, ssz::SSZIterator end) override {
         if (std::distance(it, end) != sizeof(value_)) return false;
@@ -54,7 +61,7 @@ class Slot : public ssz::Container {
 
     bool operator==(const Slot&) const = default;
     static constexpr std::size_t ssz_size = 8;
-    std::size_t get_ssz_size() const override { return ssz_size; }
+    constexpr std::size_t get_ssz_size() const override { return ssz_size; }
 
     YAML::Node encode() const override { return YAML::convert<std::uint64_t>::encode(value_); }
     bool decode(const YAML::Node& node) override { return YAML::convert<std::uint64_t>::decode(node, value_); }

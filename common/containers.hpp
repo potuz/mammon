@@ -49,6 +49,9 @@ class VectorFixedSizedParts : public ssz::Container {
         std::vector<ssz::Chunk> chunks{};
         chunks.reserve(m_arr.size());
         for (auto &part : m_arr) chunks.push_back(part.hash_tree_root());
+        // return early if only one chunk
+        if (N == 1) return chunks;
+
         ssz::HashTree ht{chunks};
         return ht.hash_tree();
     }
