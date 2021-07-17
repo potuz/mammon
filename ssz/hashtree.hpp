@@ -32,9 +32,6 @@ namespace ssz {
 class HashTree {
    private:
     std::vector<Chunk> hash_tree_;
-    int depth_, effective_depth_;
-    std::size_t effective_start_, inner_limit_, cache_size_;
-    const Chunk& hash_node(const std::vector<Chunk>& vec, std::size_t idx);
 
    public:
     explicit HashTree(const std::vector<Chunk>& chunks, std::uint64_t limit = 0);
@@ -42,7 +39,7 @@ class HashTree {
 
     void mix_in(std::size_t length);
     std::vector<Chunk>& hash_tree() { return hash_tree_; }
-    Chunk hash_tree_root() const { return hash_tree_[0]; }
+    const Chunk& hash_tree_root() const { return hash_tree_.back(); }
 };
 
 }  // namespace ssz

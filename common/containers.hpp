@@ -47,7 +47,7 @@ class VectorFixedSizedParts : public ssz::Container {
 
     std::vector<ssz::Chunk> hash_tree_x() const requires(!BasicObject<T>) {
         std::vector<ssz::Chunk> chunks{};
-        chunks.reserve(m_arr.size() * sizeof(ssz::Chunk));
+        chunks.reserve(m_arr.size());
         for (auto &part : m_arr) chunks.push_back(part.hash_tree_root());
         ssz::HashTree ht{chunks};
         return ht.hash_tree();
@@ -107,7 +107,7 @@ class ListFixedSizedParts : public ssz::Container {
 
     std::vector<ssz::Chunk> hash_tree_x() const requires(!BasicObject<T>) {
         std::vector<ssz::Chunk> chunks{};
-        chunks.reserve(m_arr.size() * sizeof(ssz::Chunk));
+        chunks.reserve(m_arr.size());
         for (auto &part : m_arr) chunks.push_back(part.hash_tree_root());
         if (chunks.empty()) {
             ssz::Chunk chunk{};
@@ -174,7 +174,7 @@ class ListVariableSizedParts : public ssz::Container {
     constexpr typename std::vector<T>::const_iterator cend() const noexcept { return m_arr.cend(); }
     std::vector<ssz::Chunk> hash_tree() const override {
         std::vector<ssz::Chunk> chunks{};
-        chunks.reserve(m_arr.size() * sizeof(ssz::Chunk));
+        chunks.reserve(m_arr.size());
         std::transform(m_arr.begin(), m_arr.end(), std::back_inserter(chunks),
                        [](const T &part) { return part.hash_tree_root(); });
         if (chunks.empty()) {

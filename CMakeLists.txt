@@ -4,6 +4,9 @@ project( mammon VERSION 0.1 LANGUAGES CXX)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
+set(CMAKE_CXX_FLAGS "-march=native -m64 -O3 -ffast-math")
+set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS} -g")
+
 set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -lstdc++")
 
 set( CMAKE_EXPORT_COMPILE_COMMANDS ON ) #youcompleteme

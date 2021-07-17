@@ -54,7 +54,7 @@ class Container {
     virtual std::vector<std::uint8_t> serialize() const = 0;
     virtual bool deserialize(SSZIterator it, SSZIterator end) = 0;
 
-    Chunk hash_tree_root() const { return this->hash_tree()[0]; }
+    Chunk hash_tree_root() const { return this->hash_tree().back(); }
 
     virtual YAML::Node encode() const = 0;
     virtual bool decode(const YAML::Node &node) = 0;

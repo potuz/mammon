@@ -19,35 +19,43 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "hashtree.hpp"
-
+#include <openssl/sha.h>
 #include <stdexcept>
 
 #include "common/bytes.hpp"
 #include "helpers/math.hpp"
-#include "openssl/sha.h"
+#include "ssz/hashtree.hpp"
 #include "ssz/ssz.hpp"
 
 namespace {
 using namespace ssz;
-constexpr Chunk zero_hash{};
 
-Chunk hash_2_chunks(const std::uint8_t* data) {
-    Chunk ret{};
+void hash_64b_blocks(unsigned char* output, const unsigned char* input, size_t blocks) {
     SHA256_CTX sha256;
-    SHA256_Init(&sha256);
-    SHA256_Update(&sha256, data, 2 * constants::BYTES_PER_CHUNK);
-    SHA256_Final(ret.data(), &sha256);
-    return ret;
+    while (blocks)
+    {
+        SHA256_Init(&sha256);
+        SHA256_Update(&sha256, input, 2 * constants::BYTES_PER_CHUNK);
+        SHA256_Final(output, &sha256);
+        blocks--;
+        output += constants::BYTES_PER_CHUNK;
+        input += 2 * constants::BYTES_PER_CHUNK;
+    }
 }
 
 Chunk hash_2_chunks(const Chunk& first, const Chunk& second) {
     std::vector<std::uint8_t> sum(first.begin(), first.end());
     sum.insert(sum.end(), second.begin(), second.end());
-    return hash_2_chunks(sum.data());
+    Chunk ret;
+    hash_64b_blocks(ret.data(), sum.data(), 1);
+    return ret;
 }
 
 // clang-format off
+
+const auto ZERO_HASH_DEPTH{42};
+constexpr Chunk zero_hash{};
+
 template <std::size_t N> requires(N > 0)
 auto zero_hash_array_helper() {
     std::array<Chunk, N> ret{};
@@ -57,8 +65,8 @@ auto zero_hash_array_helper() {
 }
 // clang-format on
 
-const auto ZERO_HASH_DEPTH{42};
 const auto zero_hash_array = zero_hash_array_helper<ZERO_HASH_DEPTH>();
+
 
 /**
  *   \brief Packs a vector of bytes into chunks of 32 bytes
@@ -70,7 +78,7 @@ std::vector<Chunk> pack_and_pad(const std::vector<std::uint8_t>& vec) {
     if (vec.empty())
         ret.push_back(zero_hash);
     else {
-        ret.reserve(vec.size() + sizeof(Chunk) - vec.size() % sizeof(Chunk));
+        ret.reserve((vec.size() + sizeof(Chunk) - 1) / sizeof(Chunk));
         for (auto it = vec.cbegin(); it < vec.end(); it += constants::BYTES_PER_CHUNK) {
             Chunk chunk{};
             std::copy(it, std::min(it + constants::BYTES_PER_CHUNK, vec.end()), chunk.begin());
@@ -80,68 +88,54 @@ std::vector<Chunk> pack_and_pad(const std::vector<std::uint8_t>& vec) {
     return ret;
 }
 
+void merkleize(const std::vector<Chunk>&vec, std::vector<Chunk>& hash_tree, std::size_t limit) {
+    if (limit == 1) {
+        hash_tree[0] = (vec[0]);
+        return;
+    }
+    auto depth = helpers::log2ceil(limit);
+    auto first = hash_tree.begin();
+    auto last = first + (vec.size() + 1) / 2;
+    if(vec.size() > 1) hash_64b_blocks(hash_tree[0].begin(), vec[0].begin(), vec.size() / 2);
+    if(vec.size() % 2) *std::prev(last) = hash_2_chunks(vec.back(), zero_hash);
+    auto dist = std::distance(first, last);
+    auto height = 1;
+    while(dist > 1) {
+        hash_64b_blocks((*last).begin(), (*first).begin(), dist / 2);
+        first = last;
+        last += (dist + 1) / 2;
+        if(dist % 2) *std::prev(last) = hash_2_chunks(*std::prev(first), zero_hash_array[height]);
+        height++;
+        dist = std::distance(first, last);
+    }
+    while(height < depth) {
+        *last = hash_2_chunks(*std::prev(last), zero_hash_array[height]);
+        last++;
+        height++;
+    }
+    hash_tree.resize(std::distance(hash_tree.begin(), last));
+}
+
+
 }  // namespace
 
 namespace ssz {
-/**
- * \brief Compute the hash tree of a node in a partial merkle tree
- *
- * \param[in] vec       the data in the leaves of the tree, will be padded by zero.
- * \param[in] idx       the index of the node we want to compute
- *
- */
-const Chunk& HashTree::hash_node(const std::vector<Chunk>& vec, std::size_t idx) {
-    if (vec.size() == 1) {
-        if (depth_ == 1)
-            hash_tree_ = vec;
-        else if (vec[0] == zero_hash)
-            std::reverse_copy(zero_hash_array.begin() + 1, zero_hash_array.begin() + hash_tree_.size() + 1,
-                              hash_tree_.begin());
-        else {
-            hash_tree_.back() = hash_2_chunks(vec[0], zero_hash);
-            auto it = hash_tree_.rbegin() + 1;
-            auto zhit = zero_hash_array.begin() + 1;
-            while (it != hash_tree_.rend()) {
-                *it = hash_2_chunks(*std::prev(it), *zhit);
-                ++it;
-                ++zhit;
-            }
-        }
-        return hash_tree_[0];
-    }
-    if (idx < effective_start_)
-        hash_tree_[idx] = hash_2_chunks(hash_node(vec, idx + 1), zero_hash_array[depth_ - idx - 2]);  // NOLINT
-    else if (idx < inner_limit_)
-        hash_tree_[idx] = hash_2_chunks(hash_node(vec, 2 * idx - effective_start_ + 1),
-                                        hash_node(vec, 2 * idx - effective_start_ + 2));
-    else if (idx < cache_size_) {
-        if (2 * (idx - inner_limit_) + 1 < vec.size())
-            hash_tree_[idx] = hash_2_chunks(vec[2 * (idx - inner_limit_)], vec[2 * (idx - inner_limit_) + 1]);
-        else if (2 * (idx - inner_limit_) + 1 == vec.size())
-            hash_tree_[idx] = hash_2_chunks(vec.back(), zero_hash);
-        else
-            hash_tree_[idx] = zero_hash_array[1];
-    } else
-        throw std::out_of_range("index larger that tree size.");
-
-    return hash_tree_[idx];
-}
-
 HashTree::HashTree(const std::vector<Chunk>& chunks, std::uint64_t limit) {
     if (chunks.empty()) throw std::out_of_range("empty chunks is not allowed");
-    effective_depth_ = helpers::log2ceil(chunks.size()) + 1;
-    depth_ = (limit == 0) ? effective_depth_ : helpers::log2ceil(limit) + 1;
-    cache_size_ = depth_ - effective_depth_ + std::bit_ceil(chunks.size()) - 1;
-    effective_start_ = depth_ - effective_depth_;
-    // NOLINTNEXTLINE
-    inner_limit_ = (chunks.size() == 1) ? effective_start_ : effective_start_ + (1 << (effective_depth_ - 2)) - 1;
-    if (cache_size_) hash_tree_.resize(cache_size_);
-    hash_node(chunks, 0);
+    auto effective_depth = helpers::log2ceil(chunks.size());
+    auto depth = (limit == 0) ? effective_depth : helpers::log2ceil(limit);
+    auto cache_size = depth - effective_depth + std::bit_ceil(chunks.size()) - 1;
+    // if limit > chunk_count assume it's a list and reserve for the mix_in
+    if (depth > effective_depth) cache_size++;
+    hash_tree_.resize(std::max(cache_size,1ul));
+
+    if (limit == 0) limit = std::bit_ceil(chunks.size());
+    merkleize(chunks, hash_tree_, limit);
 }
 
 void HashTree::mix_in(std::size_t length) {
     auto length_bytes = eth::Bytes32(length);
-    hash_tree_.insert(hash_tree_.begin(), hash_2_chunks(hash_tree_[0], length_bytes.to_array()));
+    hash_tree_.push_back(hash_2_chunks(this->hash_tree_root(), length_bytes.to_array()));
 }
 
 HashTree::HashTree(const std::vector<std::uint8_t>& vec, std::uint64_t limit) : HashTree{pack_and_pad(vec), limit} {};
