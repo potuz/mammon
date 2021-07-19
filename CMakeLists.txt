@@ -5,7 +5,7 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
 set(CMAKE_CXX_FLAGS_HOME "${CMAKE_CXX_FLAGS} -O3 -march=native -m64 -ffast-math")
-set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS} -g -march=native -m64")
+set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS} -march=native -g -m64 -ffast-math")
 
 message(STATUS "Build type ${CMAKE_BUILD_TYPE}")
 set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -lstdc++")
@@ -74,6 +74,7 @@ add_executable(test_ssz
                 ssz/ssz_container.cpp
 	 	beacon-chain/test/test_ssz.cpp
                 common/bitlist.cpp
+                ssz/sha256_intrinsic.cpp
                 ssz/hashtree.cpp
 		)
 

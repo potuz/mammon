@@ -113,7 +113,7 @@ class Bytes : public ssz::Container {
     return *ptr;
     }
     // clang-format on
-    constexpr std::uint8_t &operator[](std::size_t index) const { return m_arr[index]; }
+    constexpr std::uint8_t &operator[](std::size_t index) { return m_arr[index]; }
 
     constexpr std::uint8_t operator[](std::size_t index) const { return m_arr[index]; }
 

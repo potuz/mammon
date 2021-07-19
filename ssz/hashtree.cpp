@@ -28,10 +28,13 @@
 #include "common/bytes.hpp"
 #include "helpers/math.hpp"
 #include "ssz/ssz.hpp"
+void hash_64b_blocks(unsigned char* output, const unsigned char* input, size_t blocks);
 
 namespace {
 using namespace ssz;
 
+
+/*
 void hash_64b_blocks(unsigned char* output, const unsigned char* input, size_t blocks) {
     SHA256_CTX sha256;
     while (blocks) {
@@ -43,7 +46,7 @@ void hash_64b_blocks(unsigned char* output, const unsigned char* input, size_t b
         input += 2 * constants::BYTES_PER_CHUNK;  // NOLINT
     }
 }
-
+*/
 Chunk hash_2_chunks(const Chunk& first, const Chunk& second) {
     std::array<std::uint8_t, 2 * constants::BYTES_PER_CHUNK> sum;  // NOLINT
     std::copy(first.begin(), first.end(), sum.begin());
@@ -52,7 +55,6 @@ Chunk hash_2_chunks(const Chunk& first, const Chunk& second) {
     hash_64b_blocks(ret.data(), sum.data(), 1);
     return ret;
 }
-
 // clang-format off
 
 const auto ZERO_HASH_DEPTH{42};
