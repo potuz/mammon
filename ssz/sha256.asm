@@ -118,18 +118,6 @@ hash_64b_blocks:
 	jz		.done_hash
 	add		NUM_BLKS, DATA_PTR	; pointer to end of data
 
-	;; load initial hash values
-	;; Need to reorder these appropriately
-	;; DCBA, HGFE -> ABEF, CDGH
-;;        lea             DIGEST, [digest wrt rip]
-;;	movdqu		STATE0, [DIGEST + 0*16]
-;;	movdqu		STATE1, [DIGEST + 1*16]
-;; 
-;; 	pshufd		STATE0,  STATE0,  0xB1	; CDAB
-;; 	pshufd		STATE1,  STATE1,  0x1B	; EFGH
-;; 	movdqa		MSGTMP4, STATE0
-;; 	palignr		STATE0,  STATE1,  8	; ABEF
-;; 	pblendw		STATE1,  MSGTMP4, 0xF0	; CDGH
 .loop0:
 
         movdqa          STATE0, [digest0 wrt rip]
@@ -327,186 +315,103 @@ hash_64b_blocks:
 	paddd		STATE0, ABEF_SAVE
 	paddd		STATE1, CDGH_SAVE
 
+        ;; Rounds with padding
 	;; Save hash values for addition after rounds
 	movdqa		ABEF_SAVE, STATE0
 	movdqa		CDGH_SAVE, STATE1
 
 	;; Rounds 0-3
-	movdqu		MSG, [SHA256PADDING + 0*16]
-	pshufb		MSG, SHUF_MASK
-	movdqa		MSGTMP0, MSG
-		paddd		MSG, [SHA256CONSTANTS + 0*16]
+	movdqa		MSG, [SHA256PADDING + 0*16]
 		sha256rnds2	STATE1, STATE0
 		pshufd 		MSG, MSG, 0x0E
 		sha256rnds2	STATE0, STATE1
 
 	;; Rounds 4-7
-	movdqu		MSG, [SHA256PADDING + 1*16]
-	pshufb		MSG, SHUF_MASK
-	movdqa		MSGTMP1, MSG
-		paddd		MSG, [SHA256CONSTANTS + 1*16]
+	movdqa		MSG, [SHA256PADDING + 1*16]
 		sha256rnds2	STATE1, STATE0
 		pshufd 		MSG, MSG, 0x0E
 		sha256rnds2	STATE0, STATE1
-	sha256msg1	MSGTMP0, MSGTMP1
 
 	;; Rounds 8-11
-	movdqu		MSG, [SHA256PADDING + 2*16]
-	pshufb		MSG, SHUF_MASK
-	movdqa		MSGTMP2, MSG
-		paddd		MSG, [SHA256CONSTANTS + 2*16]
+	movdqa		MSG, [SHA256PADDING + 2*16]
 		sha256rnds2	STATE1, STATE0
 		pshufd 		MSG, MSG, 0x0E
 		sha256rnds2	STATE0, STATE1
-	sha256msg1	MSGTMP1, MSGTMP2
 
 	;; Rounds 12-15
-	movdqu		MSG, [SHA256PADDING + 3*16]
-	pshufb		MSG, SHUF_MASK
-	movdqa		MSGTMP3, MSG
-		paddd		MSG, [SHA256CONSTANTS + 3*16]
+	movdqa		MSG, [SHA256PADDING + 3*16]
 		sha256rnds2	STATE1, STATE0
-	movdqa		MSGTMP4, MSGTMP3
-	palignr		MSGTMP4, MSGTMP2, 4
-	paddd		MSGTMP0, MSGTMP4
-	sha256msg2	MSGTMP0, MSGTMP3
 		pshufd 		MSG, MSG, 0x0E
 		sha256rnds2	STATE0, STATE1
-	sha256msg1	MSGTMP2, MSGTMP3
 
 	;; Rounds 16-19
-	movdqa		MSG, MSGTMP0
-		paddd		MSG, [SHA256CONSTANTS + 4*16]
+	movdqa		MSG, [SHA256PADDING + 4*16]
 		sha256rnds2	STATE1, STATE0
-	movdqa		MSGTMP4, MSGTMP0
-	palignr		MSGTMP4, MSGTMP3, 4
-	paddd		MSGTMP1, MSGTMP4
-	sha256msg2	MSGTMP1, MSGTMP0
 		pshufd 		MSG, MSG, 0x0E
 		sha256rnds2	STATE0, STATE1
-	sha256msg1	MSGTMP3, MSGTMP0
 
 	;; Rounds 20-23
-	movdqa		MSG, MSGTMP1
-		paddd		MSG, [SHA256CONSTANTS + 5*16]
+	movdqa		MSG, [SHA256PADDING + 5*16]
 		sha256rnds2	STATE1, STATE0
-	movdqa		MSGTMP4, MSGTMP1
-	palignr		MSGTMP4, MSGTMP0, 4
-	paddd		MSGTMP2, MSGTMP4
-	sha256msg2	MSGTMP2, MSGTMP1
 		pshufd 		MSG, MSG, 0x0E
 		sha256rnds2	STATE0, STATE1
-	sha256msg1	MSGTMP0, MSGTMP1
 
 	;; Rounds 24-27
-	movdqa		MSG, MSGTMP2
-		paddd		MSG, [SHA256CONSTANTS + 6*16]
+	movdqa		MSG, [SHA256PADDING + 6*16]
 		sha256rnds2	STATE1, STATE0
-	movdqa		MSGTMP4, MSGTMP2
-	palignr		MSGTMP4, MSGTMP1, 4
-	paddd		MSGTMP3, MSGTMP4
-	sha256msg2	MSGTMP3, MSGTMP2
 		pshufd 		MSG, MSG, 0x0E
 		sha256rnds2	STATE0, STATE1
-	sha256msg1	MSGTMP1, MSGTMP2
 
 	;; Rounds 28-31
-	movdqa		MSG, MSGTMP3
-		paddd		MSG, [SHA256CONSTANTS + 7*16]
+	movdqa		MSG, [SHA256PADDING + 7*16]
 		sha256rnds2	STATE1, STATE0
-	movdqa		MSGTMP4, MSGTMP3
-	palignr		MSGTMP4, MSGTMP2, 4
-	paddd		MSGTMP0, MSGTMP4
-	sha256msg2	MSGTMP0, MSGTMP3
 		pshufd 		MSG, MSG, 0x0E
 		sha256rnds2	STATE0, STATE1
-	sha256msg1	MSGTMP2, MSGTMP3
 
 	;; Rounds 32-35
-	movdqa		MSG, MSGTMP0
-		paddd		MSG, [SHA256CONSTANTS + 8*16]
+	movdqa		MSG, [SHA256PADDING + 8*16]
 		sha256rnds2	STATE1, STATE0
-	movdqa		MSGTMP4, MSGTMP0
-	palignr		MSGTMP4, MSGTMP3, 4
-	paddd		MSGTMP1, MSGTMP4
-	sha256msg2	MSGTMP1, MSGTMP0
 		pshufd 		MSG, MSG, 0x0E
 		sha256rnds2	STATE0, STATE1
-	sha256msg1	MSGTMP3, MSGTMP0
 
 	;; Rounds 36-39
-	movdqa		MSG, MSGTMP1
-		paddd		MSG, [SHA256CONSTANTS + 9*16]
+	movdqa		MSG, [SHA256PADDING + 9*16]
 		sha256rnds2	STATE1, STATE0
-	movdqa		MSGTMP4, MSGTMP1
-	palignr		MSGTMP4, MSGTMP0, 4
-	paddd		MSGTMP2, MSGTMP4
-	sha256msg2	MSGTMP2, MSGTMP1
 		pshufd 		MSG, MSG, 0x0E
 		sha256rnds2	STATE0, STATE1
-	sha256msg1	MSGTMP0, MSGTMP1
 
 	;; Rounds 40-43
-	movdqa		MSG, MSGTMP2
-		paddd		MSG, [SHA256CONSTANTS + 10*16]
+	movdqa		MSG, [SHA256PADDING + 10*16]
 		sha256rnds2	STATE1, STATE0
-	movdqa		MSGTMP4, MSGTMP2
-	palignr		MSGTMP4, MSGTMP1, 4
-	paddd		MSGTMP3, MSGTMP4
-	sha256msg2	MSGTMP3, MSGTMP2
 		pshufd 		MSG, MSG, 0x0E
 		sha256rnds2	STATE0, STATE1
-	sha256msg1	MSGTMP1, MSGTMP2
 
 	;; Rounds 44-47
-	movdqa		MSG, MSGTMP3
-		paddd		MSG, [SHA256CONSTANTS + 11*16]
+	movdqa		MSG, [SHA256PADDING + 11*16]
 		sha256rnds2	STATE1, STATE0
-	movdqa		MSGTMP4, MSGTMP3
-	palignr		MSGTMP4, MSGTMP2, 4
-	paddd		MSGTMP0, MSGTMP4
-	sha256msg2	MSGTMP0, MSGTMP3
 		pshufd 		MSG, MSG, 0x0E
 		sha256rnds2	STATE0, STATE1
-	sha256msg1	MSGTMP2, MSGTMP3
 
 	;; Rounds 48-51
-	movdqa		MSG, MSGTMP0
-		paddd		MSG, [SHA256CONSTANTS + 12*16]
+	movdqa		MSG, [SHA256PADDING + 12*16]
 		sha256rnds2	STATE1, STATE0
-	movdqa		MSGTMP4, MSGTMP0
-	palignr		MSGTMP4, MSGTMP3, 4
-	paddd		MSGTMP1, MSGTMP4
-	sha256msg2	MSGTMP1, MSGTMP0
 		pshufd 		MSG, MSG, 0x0E
 		sha256rnds2	STATE0, STATE1
-	sha256msg1	MSGTMP3, MSGTMP0
 
 	;; Rounds 52-55
-	movdqa		MSG, MSGTMP1
-		paddd		MSG, [SHA256CONSTANTS + 13*16]
+	movdqa		MSG, [SHA256PADDING + 13*16]
 		sha256rnds2	STATE1, STATE0
-	movdqa		MSGTMP4, MSGTMP1
-	palignr		MSGTMP4, MSGTMP0, 4
-	paddd		MSGTMP2, MSGTMP4
-	sha256msg2	MSGTMP2, MSGTMP1
 		pshufd 		MSG, MSG, 0x0E
 		sha256rnds2	STATE0, STATE1
 
 	;; Rounds 56-59
-	movdqa		MSG, MSGTMP2
-		paddd		MSG, [SHA256CONSTANTS + 14*16]
+	movdqa		MSG, [SHA256PADDING + 14*16]
 		sha256rnds2	STATE1, STATE0
-	movdqa		MSGTMP4, MSGTMP2
-	palignr		MSGTMP4, MSGTMP1, 4
-	paddd		MSGTMP3, MSGTMP4
-	sha256msg2	MSGTMP3, MSGTMP2
 		pshufd 		MSG, MSG, 0x0E
 		sha256rnds2	STATE0, STATE1
 
 	;; Rounds 60-63
-	movdqa		MSG, MSGTMP3
-		paddd		MSG, [SHA256CONSTANTS + 15*16]
+	movdqa		MSG, [SHA256PADDING + 15*16]
 		sha256rnds2	STATE1, STATE0
 		pshufd 		MSG, MSG, 0x0E
 		sha256rnds2	STATE0, STATE1
@@ -575,9 +480,20 @@ digest1:
         ddq      0x3c6ef372a54ff53a1f83d9ab5be0cd19 ;;0x510e527f9b05688c1f83d9ab5be0cd19    ;;  5b 1f a5 3c
 
 padding:
-        dd      0x80,0,0,0
-        dd      0,0,0,0
-        dd      0,0,0,0
-        dd      0,0,0,0x020000 
-
+        dd      0xc28a2f98, 0x71374491, 0xb5c0fbcf, 0xe9b5dba5
+        dd      0x3956c25b, 0x59f111f1, 0x923f82a4, 0xab1c5ed5
+        dd      0xd807aa98, 0x12835b01, 0x243185be, 0x550c7dc3
+        dd      0x72be5d74, 0x80deb1fe, 0x9bdc06a7, 0xc19bf374
+        dd      0x649b69c1, 0xf0fe4786, 0xfe1edc6, 0x240cf254
+        dd      0x4fe9346f, 0x6cc984be, 0x61b9411e, 0x16f988fa
+        dd      0xf2c65152, 0xa88e5a6d, 0xb019fc65, 0xb9d99ec7
+        dd      0x9a1231c3, 0xe70eeaa0, 0xfdb1232b, 0xc7353eb0
+        dd      0x3069bad5, 0xcb976d5f, 0x5a0f118f, 0xdc1eeefd
+        dd      0xa35b689, 0xde0b7a04, 0x58f4ca9d, 0xe15d5b16
+        dd      0x7f3e86, 0x37088980, 0xa507ea32, 0x6fab9537
+        dd      0x17406110, 0xd8cd6f1, 0xcdaa3b6d, 0xc0bbbe37
+        dd      0x83613bda, 0xdb48a363, 0xb02e931, 0x6fd15ca7
+        dd      0x521afaca, 0x31338431, 0x6ed41a95, 0x6d437890
+        dd      0xc39c91f2, 0x9eccabbd, 0xb5c9a0e6, 0x532fb63c
+        dd      0xd2c741c6, 0x7237ea3, 0xa4954b68, 0x4c191d76
 
