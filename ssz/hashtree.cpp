@@ -28,7 +28,7 @@
 #include "common/bytes.hpp"
 #include "helpers/math.hpp"
 #include "ssz/ssz.hpp"
-void hash_64b_blocks(unsigned char* output, const unsigned char* input, size_t blocks);
+extern "C" void hash_64b_blocks(unsigned char* output, const unsigned char* input, size_t blocks);
 
 namespace {
 using namespace ssz;
@@ -62,7 +62,7 @@ constexpr Chunk zero_hash{};
 
 template <std::size_t N> requires(N > 0)
 auto zero_hash_array_helper() {
-    std::array<Chunk, N> ret{};
+    std::array<Chunk, N> ret;
     ret[0] = zero_hash;
     for (auto it = ret.begin() + 1; it != ret.end(); ++it) *it = hash_2_chunks(*std::prev(it), *std::prev(it));
     return ret;

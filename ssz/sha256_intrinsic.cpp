@@ -49,7 +49,7 @@ void hash_64b_blocks(unsigned char* output, const unsigned char* input, size_t b
    __m128i abef_saveb, cdgh_saveb;
 
    shuf_mask = _mm_set_epi64x(0x0c0d0e0f08090a0bull, 0x0405060700010203ull);
-
+/*
    while (blocks > 1) {
       
    // Load initial hash values
@@ -725,7 +725,8 @@ void hash_64b_blocks(unsigned char* output, const unsigned char* input, size_t b
       input += 128;
       blocks -= 2;
    }
-   if (blocks) {
+*/
+   while (blocks) {
    // Load initial hash values
    // Need to reorder these appropriately
    // DCBA, HGFE -> ABEF, CDGH
@@ -1102,5 +1103,9 @@ void hash_64b_blocks(unsigned char* output, const unsigned char* input, size_t b
        for (int i = 0; i < 32; i += 4) {
            std::reverse(output + i, output + i +4);
        }
-   }
+
+      output += 32;
+      input += 64;
+      blocks--;
+}
 }
