@@ -67,6 +67,7 @@ endif()
 add_executable (beacon-chain
         common/bitlist.cpp
 	ssz/hashtree.cpp
+	ssz/sha256.asm
         ssz/ssz_container.cpp
 	beacon-chain/main.cpp
 	)
@@ -101,6 +102,7 @@ target_link_libraries(test_ssz
 add_executable(test_bytes
                 ssz/ssz_container.cpp
                 ssz/hashtree.cpp
+                ssz/sha256.asm
                 common/bytes_test.cpp)
 
 target_include_directories(test_bytes PUBLIC

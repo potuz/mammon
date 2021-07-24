@@ -33,7 +33,6 @@ extern "C" void hash_64b_blocks(unsigned char* output, const unsigned char* inpu
 namespace {
 using namespace ssz;
 
-
 /*
 void hash_64b_blocks(unsigned char* output, const unsigned char* input, size_t blocks) {
     SHA256_CTX sha256;
@@ -62,7 +61,7 @@ constexpr Chunk zero_hash{};
 
 template <std::size_t N> requires(N > 0)
 auto zero_hash_array_helper() {
-    std::array<Chunk, N> ret;
+    std::array<Chunk, N> ret; // NOLINT
     ret[0] = zero_hash;
     for (auto it = ret.begin() + 1; it != ret.end(); ++it) *it = hash_2_chunks(*std::prev(it), *std::prev(it));
     return ret;

@@ -1,5 +1,28 @@
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-; Copyright (c) 2013, Intel Corporation 
+;;  sha256.asm
+; *
+; *  This file is part of Mammon.
+; *  mammon is a greedy and selfish ETH consensus client.
+; *
+; *  Copyright (c) 2021 - Reimundo Heluani (potuz) potuz@potuz.net
+; *
+; *  This program is free software: you can redistribute it and/or modify
+; *  it under the terms of the GNU General Public License as published by
+; *  the Free Software Foundation, either version 3 of the License, or
+; *  (at your option) any later version.
+; *
+; *  This program is distributed in the hope that it will be useful,
+; *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+; *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+; *  GNU General Public License for more details.
+; *
+;  You should have received a copy of the GNU General Public License
+;  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+;
+;  This implementation is a 64bytes optimized implementation based on Intel's code
+;  whose copyright follows
+;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Copyright (c) 2013, Intel Corporation 
 ; 
 ; All rights reserved. 
 ; 
@@ -32,30 +55,6 @@
 ; NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 ; SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;
-; Intel SHA Extensions optimized implementation of a SHA-256 update function 
-;
-; The function takes a pointer to the current hash values, a pointer to the 
-; input data, and a number of 64 byte blocks to process.  Once all blocks have 
-; been processed, the digest pointer is  updated with the resulting hash value.
-; The function only processes complete blocks, there is no functionality to 
-; store partial blocks.  All message padding and hash value initialization must
-; be done outside the update function.  
-;
-; The indented lines in the loop are instructions related to rounds processing.
-; The non-indented lines are instructions related to the message schedule.
-;
-; Author: Sean Gulley <sean.m.gulley@intel.com>
-; Date:   July 2013
-;
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;
-; Example YASM command lines:
-; Windows:  yasm -Xvc -f x64 -rnasm -pnasm -DWINABI -o intel_sha_extensions_sha256_assembly.obj -g cv8 intel_sha_extensions_sha256_assembly.asm
-; Linux:    yasm -f elf64 -X gnu -g dwarf2 -o intel_sha_extensions_sha256_assembly.o intel_sha_extensions_sha256_assembly.asm
-;
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
 %ifdef WINABI
 %define OUTPUT_PTR	rcx 	; 1st arg
 %define DATA_PTR	rdx 	; 2nd arg
@@ -68,7 +67,7 @@
 
 %define SHA256CONSTANTS	rax
 %define SHA256PADDING   rcx
-%define DIGEST          rcx
+
 
 %ifdef WINABI
 %define RSPSAVE		r9
@@ -92,6 +91,17 @@ endstruc
 %define ABEF_SAVE	xmm9
 %define CDGH_SAVE	xmm10
 
+%define STATE0b         xmm9
+%define STATE1b         xmm10
+%define MSGTMP0b	xmm11
+%define MSGTMP1b	xmm12
+%define MSGTMP2b	xmm13
+%define MSGTMP3b	xmm14
+%define MSGTMP4b	xmm15
+
+
+
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; void sha256_update(uint32_t *digest, const void *data, uint32_t numBlocks);
 ;; arg 1 : pointer to digest
@@ -114,18 +124,532 @@ hash_64b_blocks:
 	movdqa		[rsp + frame.xmm_save + 4*16], xmm10
 %endif
 
-	shl		NUM_BLKS, 6		; convert to bytes
-	jz		.done_hash
-	add		NUM_BLKS, DATA_PTR	; pointer to end of data
+	movdqa		SHUF_MASK, [PSHUFFLE_BYTE_FLIP_MASK wrt rip]
+	lea		SHA256CONSTANTS,[K256 wrt rip]
+	lea		SHA256PADDING,[padding wrt rip]
 
-.loop0:
+
+.hash_2_blocks:
+        cmp             NUM_BLKS, 2
+	jl		.hash_1_block
 
         movdqa          STATE0, [digest0 wrt rip]
         movdqa          STATE1, [digest1 wrt rip]
 
-	movdqa		SHUF_MASK, [PSHUFFLE_BYTE_FLIP_MASK wrt rip]
-	lea		SHA256CONSTANTS,[K256 wrt rip]
-	lea		SHA256PADDING,[padding wrt rip]
+        movdqa          STATE0b, [digest0 wrt rip]
+        movdqa          STATE1b, [digest1 wrt rip]
+
+	;; Rounds 0-3
+	movdqu		MSG, [DATA_PTR + 0*16]
+	pshufb		MSG, SHUF_MASK
+	movdqa		MSGTMP0, MSG
+		paddd		MSG, [SHA256CONSTANTS + 0*16]
+		sha256rnds2	STATE1, STATE0
+		pshufd 		MSG, MSG, 0x0E
+		sha256rnds2	STATE0, STATE1
+	movdqu		MSG, [DATA_PTR + 4*16]
+	pshufb		MSG, SHUF_MASK
+	movdqa		MSGTMP0b, MSG
+		paddd		MSG, [SHA256CONSTANTS + 0*16]
+		sha256rnds2	STATE1b, STATE0b
+		pshufd 		MSG, MSG, 0x0E
+		sha256rnds2	STATE0b, STATE1b
+
+
+	;; Rounds 4-7
+	movdqu		MSG, [DATA_PTR + 1*16]
+	pshufb		MSG, SHUF_MASK
+	movdqa		MSGTMP1, MSG
+		paddd		MSG, [SHA256CONSTANTS + 1*16]
+		sha256rnds2	STATE1, STATE0
+		pshufd 		MSG, MSG, 0x0E
+		sha256rnds2	STATE0, STATE1
+	sha256msg1	MSGTMP0, MSGTMP1
+	movdqu		MSG, [DATA_PTR + 5*16]
+	pshufb		MSG, SHUF_MASK
+	movdqa		MSGTMP1b, MSG
+		paddd		MSG, [SHA256CONSTANTS + 1*16]
+		sha256rnds2	STATE1b, STATE0b
+		pshufd 		MSG, MSG, 0x0E
+		sha256rnds2	STATE0b, STATE1b
+	sha256msg1	MSGTMP0b, MSGTMP1b
+	;; Rounds 8-11
+	movdqu		MSG, [DATA_PTR + 2*16]
+	pshufb		MSG, SHUF_MASK
+	movdqa		MSGTMP2, MSG
+		paddd		MSG, [SHA256CONSTANTS + 2*16]
+		sha256rnds2	STATE1, STATE0
+		pshufd 		MSG, MSG, 0x0E
+		sha256rnds2	STATE0, STATE1
+	sha256msg1	MSGTMP1, MSGTMP2
+	movdqu		MSG, [DATA_PTR + 6*16]
+	pshufb		MSG, SHUF_MASK
+	movdqa		MSGTMP2b, MSG
+		paddd		MSG, [SHA256CONSTANTS + 2*16]
+		sha256rnds2	STATE1b, STATE0b
+		pshufd 		MSG, MSG, 0x0E
+		sha256rnds2	STATE0b, STATE1b
+	sha256msg1	MSGTMP1b, MSGTMP2b
+	;; Rounds 12-15
+	movdqu		MSG, [DATA_PTR + 3*16]
+	pshufb		MSG, SHUF_MASK
+	movdqa		MSGTMP3, MSG
+		paddd		MSG, [SHA256CONSTANTS + 3*16]
+		sha256rnds2	STATE1, STATE0
+	movdqa		MSGTMP4, MSGTMP3
+	palignr		MSGTMP4, MSGTMP2, 4
+	paddd		MSGTMP0, MSGTMP4
+	sha256msg2	MSGTMP0, MSGTMP3
+		pshufd 		MSG, MSG, 0x0E
+		sha256rnds2	STATE0, STATE1
+	sha256msg1	MSGTMP2, MSGTMP3
+	movdqu		MSG, [DATA_PTR + 7*16]
+	pshufb		MSG, SHUF_MASK
+	movdqa		MSGTMP3b, MSG
+		paddd		MSG, [SHA256CONSTANTS + 3*16]
+		sha256rnds2	STATE1b, STATE0b
+	movdqa		MSGTMP4b, MSGTMP3b
+	palignr		MSGTMP4b, MSGTMP2b, 4
+	paddd		MSGTMP0b, MSGTMP4b
+	sha256msg2	MSGTMP0b, MSGTMP3b
+		pshufd 		MSG, MSG, 0x0E
+		sha256rnds2	STATE0b, STATE1b
+	sha256msg1	MSGTMP2b, MSGTMP3b
+
+	;; Rounds 16-19
+	movdqa		MSG, MSGTMP0
+		paddd		MSG, [SHA256CONSTANTS + 4*16]
+		sha256rnds2	STATE1, STATE0
+	movdqa		MSGTMP4, MSGTMP0
+	palignr		MSGTMP4, MSGTMP3, 4
+	paddd		MSGTMP1, MSGTMP4
+	sha256msg2	MSGTMP1, MSGTMP0
+		pshufd 		MSG, MSG, 0x0E
+		sha256rnds2	STATE0, STATE1
+	sha256msg1	MSGTMP3, MSGTMP0
+	movdqa		MSG, MSGTMP0b
+		paddd		MSG, [SHA256CONSTANTS + 4*16]
+		sha256rnds2	STATE1b, STATE0b
+	movdqa		MSGTMP4b, MSGTMP0b
+	palignr		MSGTMP4b, MSGTMP3b, 4
+	paddd		MSGTMP1b, MSGTMP4b
+	sha256msg2	MSGTMP1b, MSGTMP0b
+		pshufd 		MSG, MSG, 0x0E
+		sha256rnds2	STATE0b, STATE1b
+	sha256msg1	MSGTMP3b, MSGTMP0b
+
+	;; Rounds 20-23
+	movdqa		MSG, MSGTMP1
+		paddd		MSG, [SHA256CONSTANTS + 5*16]
+		sha256rnds2	STATE1, STATE0
+	movdqa		MSGTMP4, MSGTMP1
+	palignr		MSGTMP4, MSGTMP0, 4
+	paddd		MSGTMP2, MSGTMP4
+	sha256msg2	MSGTMP2, MSGTMP1
+		pshufd 		MSG, MSG, 0x0E
+		sha256rnds2	STATE0, STATE1
+	sha256msg1	MSGTMP0, MSGTMP1
+	movdqa		MSG, MSGTMP1b
+		paddd		MSG, [SHA256CONSTANTS + 5*16]
+		sha256rnds2	STATE1b, STATE0b
+	movdqa		MSGTMP4b, MSGTMP1b
+	palignr		MSGTMP4b, MSGTMP0b, 4
+	paddd		MSGTMP2b, MSGTMP4b
+	sha256msg2	MSGTMP2b, MSGTMP1b
+		pshufd 		MSG, MSG, 0x0E
+		sha256rnds2	STATE0b, STATE1b
+	sha256msg1	MSGTMP0b, MSGTMP1b
+
+	;; Rounds 24-27
+	movdqa		MSG, MSGTMP2
+		paddd		MSG, [SHA256CONSTANTS + 6*16]
+		sha256rnds2	STATE1, STATE0
+	movdqa		MSGTMP4, MSGTMP2
+	palignr		MSGTMP4, MSGTMP1, 4
+	paddd		MSGTMP3, MSGTMP4
+	sha256msg2	MSGTMP3, MSGTMP2
+		pshufd 		MSG, MSG, 0x0E
+		sha256rnds2	STATE0, STATE1
+	sha256msg1	MSGTMP1, MSGTMP2
+
+	movdqa		MSG, MSGTMP2b
+		paddd		MSG, [SHA256CONSTANTS + 6*16]
+		sha256rnds2	STATE1b, STATE0b
+	movdqa		MSGTMP4b, MSGTMP2b
+	palignr		MSGTMP4b, MSGTMP1b, 4
+	paddd		MSGTMP3b, MSGTMP4b
+	sha256msg2	MSGTMP3b, MSGTMP2b
+		pshufd 		MSG, MSG, 0x0E
+		sha256rnds2	STATE0b, STATE1b
+	sha256msg1	MSGTMP1b, MSGTMP2b
+
+	;; Rounds 28-31
+	movdqa		MSG, MSGTMP3
+		paddd		MSG, [SHA256CONSTANTS + 7*16]
+		sha256rnds2	STATE1, STATE0
+	movdqa		MSGTMP4, MSGTMP3
+	palignr		MSGTMP4, MSGTMP2, 4
+	paddd		MSGTMP0, MSGTMP4
+	sha256msg2	MSGTMP0, MSGTMP3
+		pshufd 		MSG, MSG, 0x0E
+		sha256rnds2	STATE0, STATE1
+	sha256msg1	MSGTMP2, MSGTMP3
+	movdqa		MSG, MSGTMP3b
+		paddd		MSG, [SHA256CONSTANTS + 7*16]
+		sha256rnds2	STATE1b, STATE0b
+	movdqa		MSGTMP4b, MSGTMP3b
+	palignr		MSGTMP4b, MSGTMP2b, 4
+	paddd		MSGTMP0b, MSGTMP4b
+	sha256msg2	MSGTMP0b, MSGTMP3b
+		pshufd 		MSG, MSG, 0x0E
+		sha256rnds2	STATE0b, STATE1b
+	sha256msg1	MSGTMP2b, MSGTMP3b
+	;; Rounds 32-35
+	movdqa		MSG, MSGTMP0
+		paddd		MSG, [SHA256CONSTANTS + 8*16]
+		sha256rnds2	STATE1, STATE0
+	movdqa		MSGTMP4, MSGTMP0
+	palignr		MSGTMP4, MSGTMP3, 4
+	paddd		MSGTMP1, MSGTMP4
+	sha256msg2	MSGTMP1, MSGTMP0
+		pshufd 		MSG, MSG, 0x0E
+		sha256rnds2	STATE0, STATE1
+	sha256msg1	MSGTMP3, MSGTMP0
+	movdqa		MSG, MSGTMP0b
+		paddd		MSG, [SHA256CONSTANTS + 8*16]
+		sha256rnds2	STATE1b, STATE0b
+	movdqa		MSGTMP4b, MSGTMP0b
+	palignr		MSGTMP4b, MSGTMP3b, 4
+	paddd		MSGTMP1b, MSGTMP4b
+	sha256msg2	MSGTMP1b, MSGTMP0b
+		pshufd 		MSG, MSG, 0x0E
+		sha256rnds2	STATE0b, STATE1b
+	sha256msg1	MSGTMP3b, MSGTMP0b
+
+	;; Rounds 36-39
+	movdqa		MSG, MSGTMP1
+		paddd		MSG, [SHA256CONSTANTS + 9*16]
+		sha256rnds2	STATE1, STATE0
+	movdqa		MSGTMP4, MSGTMP1
+	palignr		MSGTMP4, MSGTMP0, 4
+	paddd		MSGTMP2, MSGTMP4
+	sha256msg2	MSGTMP2, MSGTMP1
+		pshufd 		MSG, MSG, 0x0E
+		sha256rnds2	STATE0, STATE1
+	sha256msg1	MSGTMP0, MSGTMP1
+	movdqa		MSG, MSGTMP1b
+		paddd		MSG, [SHA256CONSTANTS + 9*16]
+		sha256rnds2	STATE1b, STATE0b
+	movdqa		MSGTMP4b, MSGTMP1b
+	palignr		MSGTMP4b, MSGTMP0b, 4
+	paddd		MSGTMP2b, MSGTMP4b
+	sha256msg2	MSGTMP2b, MSGTMP1b
+		pshufd 		MSG, MSG, 0x0E
+		sha256rnds2	STATE0b, STATE1b
+	sha256msg1	MSGTMP0b, MSGTMP1b
+
+	;; Rounds 40-43
+	movdqa		MSG, MSGTMP2
+		paddd		MSG, [SHA256CONSTANTS + 10*16]
+		sha256rnds2	STATE1, STATE0
+	movdqa		MSGTMP4, MSGTMP2
+	palignr		MSGTMP4, MSGTMP1, 4
+	paddd		MSGTMP3, MSGTMP4
+	sha256msg2	MSGTMP3, MSGTMP2
+		pshufd 		MSG, MSG, 0x0E
+		sha256rnds2	STATE0, STATE1
+	sha256msg1	MSGTMP1, MSGTMP2
+	movdqa		MSG, MSGTMP2b
+		paddd		MSG, [SHA256CONSTANTS + 10*16]
+		sha256rnds2	STATE1b, STATE0b
+	movdqa		MSGTMP4b, MSGTMP2b
+	palignr		MSGTMP4b, MSGTMP1b, 4
+	paddd		MSGTMP3b, MSGTMP4b
+	sha256msg2	MSGTMP3b, MSGTMP2b
+		pshufd 		MSG, MSG, 0x0E
+		sha256rnds2	STATE0b, STATE1b
+	sha256msg1	MSGTMP1b, MSGTMP2b
+
+	;; Rounds 44-47
+	movdqa		MSG, MSGTMP3
+		paddd		MSG, [SHA256CONSTANTS + 11*16]
+		sha256rnds2	STATE1, STATE0
+	movdqa		MSGTMP4, MSGTMP3
+	palignr		MSGTMP4, MSGTMP2, 4
+	paddd		MSGTMP0, MSGTMP4
+	sha256msg2	MSGTMP0, MSGTMP3
+		pshufd 		MSG, MSG, 0x0E
+		sha256rnds2	STATE0, STATE1
+	sha256msg1	MSGTMP2, MSGTMP3
+	movdqa		MSG, MSGTMP3b
+		paddd		MSG, [SHA256CONSTANTS + 11*16]
+		sha256rnds2	STATE1b, STATE0b
+	movdqa		MSGTMP4b, MSGTMP3b
+	palignr		MSGTMP4b, MSGTMP2b, 4
+	paddd		MSGTMP0b, MSGTMP4b
+	sha256msg2	MSGTMP0b, MSGTMP3b
+		pshufd 		MSG, MSG, 0x0E
+		sha256rnds2	STATE0b, STATE1b
+	sha256msg1	MSGTMP2b, MSGTMP3b
+       
+	;; Rounds 48-51
+	movdqa		MSG, MSGTMP0
+		paddd		MSG, [SHA256CONSTANTS + 12*16]
+		sha256rnds2	STATE1, STATE0
+	movdqa		MSGTMP4, MSGTMP0
+	palignr		MSGTMP4, MSGTMP3, 4
+	paddd		MSGTMP1, MSGTMP4
+	sha256msg2	MSGTMP1, MSGTMP0
+		pshufd 		MSG, MSG, 0x0E
+		sha256rnds2	STATE0, STATE1
+	sha256msg1	MSGTMP3, MSGTMP0
+	movdqa		MSG, MSGTMP0b
+		paddd		MSG, [SHA256CONSTANTS + 12*16]
+		sha256rnds2	STATE1b, STATE0b
+	movdqa		MSGTMP4b, MSGTMP0b
+	palignr		MSGTMP4b, MSGTMP3b, 4
+	paddd		MSGTMP1b, MSGTMP4b
+	sha256msg2	MSGTMP1b, MSGTMP0b
+		pshufd 		MSG, MSG, 0x0E
+		sha256rnds2	STATE0b, STATE1b
+	sha256msg1	MSGTMP3b, MSGTMP0b
+        
+ 	;; Rounds 52-55
+	movdqa		MSG, MSGTMP1
+		paddd		MSG, [SHA256CONSTANTS + 13*16]
+		sha256rnds2	STATE1, STATE0
+	movdqa		MSGTMP4, MSGTMP1
+	palignr		MSGTMP4, MSGTMP0, 4
+	paddd		MSGTMP2, MSGTMP4
+	sha256msg2	MSGTMP2, MSGTMP1
+		pshufd 		MSG, MSG, 0x0E
+		sha256rnds2	STATE0, STATE1
+	movdqa		MSG, MSGTMP1b
+		paddd		MSG, [SHA256CONSTANTS + 13*16]
+		sha256rnds2	STATE1b, STATE0b
+	movdqa		MSGTMP4b, MSGTMP1b
+	palignr		MSGTMP4b, MSGTMP0b, 4
+	paddd		MSGTMP2b, MSGTMP4b
+	sha256msg2	MSGTMP2b, MSGTMP1b
+		pshufd 		MSG, MSG, 0x0E
+		sha256rnds2	STATE0b, STATE1b
+
+	;; Rounds 56-59
+	movdqa		MSG, MSGTMP2
+		paddd		MSG, [SHA256CONSTANTS + 14*16]
+		sha256rnds2	STATE1, STATE0
+	movdqa		MSGTMP4, MSGTMP2
+	palignr		MSGTMP4, MSGTMP1, 4
+	paddd		MSGTMP3, MSGTMP4
+	sha256msg2	MSGTMP3, MSGTMP2
+		pshufd 		MSG, MSG, 0x0E
+		sha256rnds2	STATE0, STATE1
+	movdqa		MSG, MSGTMP2b
+		paddd		MSG, [SHA256CONSTANTS + 14*16]
+		sha256rnds2	STATE1b, STATE0b
+	movdqa		MSGTMP4b, MSGTMP2b
+	palignr		MSGTMP4b, MSGTMP1b, 4
+	paddd		MSGTMP3b, MSGTMP4b
+	sha256msg2	MSGTMP3b, MSGTMP2b
+		pshufd 		MSG, MSG, 0x0E
+		sha256rnds2	STATE0b, STATE1b
+
+
+	;; Rounds 60-63
+	movdqa		MSG, MSGTMP3
+		paddd		MSG, [SHA256CONSTANTS + 15*16]
+		sha256rnds2	STATE1, STATE0
+		pshufd 		MSG, MSG, 0x0E
+		sha256rnds2	STATE0, STATE1
+	movdqa		MSG, MSGTMP3b
+		paddd		MSG, [SHA256CONSTANTS + 15*16]
+		sha256rnds2	STATE1b, STATE0b
+		pshufd 		MSG, MSG, 0x0E
+		sha256rnds2	STATE0b, STATE1b
+
+       
+	paddd		STATE0, [digest0 wrt rip]
+	paddd		STATE1, [digest1 wrt rip]
+	paddd           STATE0b, [digest0 wrt rip]
+	paddd		STATE1b, [digest1 wrt rip]
+
+        ;; Rounds with padding
+        
+	;; Save hash values for addition after rounds
+	movdqa		[ABEF_SAVEa wrt rip], STATE0
+	movdqa		[CDGH_SAVEa wrt rip], STATE1
+	movdqa		[ABEF_SAVEb wrt rip], STATE0b
+	movdqa		[CDGH_SAVEb wrt rip], STATE1b
+
+	;; Rounds 0-3
+	movdqa		MSG, [SHA256PADDING + 0*16]
+		sha256rnds2	STATE1, STATE0
+		sha256rnds2	STATE1b, STATE0b
+		pshufd 		MSG, MSG, 0x0E
+		sha256rnds2	STATE0, STATE1
+		sha256rnds2	STATE0b, STATE1b
+
+	;; Rounds 4-7
+	movdqa		MSG, [SHA256PADDING + 1*16]
+		sha256rnds2	STATE1, STATE0
+		sha256rnds2	STATE1b, STATE0b
+		pshufd 		MSG, MSG, 0x0E
+		sha256rnds2	STATE0, STATE1
+		sha256rnds2	STATE0b, STATE1b
+
+
+	movdqa		MSG, [SHA256PADDING + 2*16]
+		sha256rnds2	STATE1, STATE0
+		sha256rnds2	STATE1b, STATE0b
+		pshufd 		MSG, MSG, 0x0E
+		sha256rnds2	STATE0, STATE1
+		sha256rnds2	STATE0b, STATE1b
+
+
+	movdqa		MSG, [SHA256PADDING + 3*16]
+		sha256rnds2	STATE1, STATE0
+		sha256rnds2	STATE1b, STATE0b
+		pshufd 		MSG, MSG, 0x0E
+		sha256rnds2	STATE0, STATE1
+		sha256rnds2	STATE0b, STATE1b
+
+
+	movdqa		MSG, [SHA256PADDING + 4*16]
+		sha256rnds2	STATE1, STATE0
+		sha256rnds2	STATE1b, STATE0b
+		pshufd 		MSG, MSG, 0x0E
+		sha256rnds2	STATE0, STATE1
+		sha256rnds2	STATE0b, STATE1b
+
+
+	movdqa		MSG, [SHA256PADDING + 5*16]
+		sha256rnds2	STATE1, STATE0
+		sha256rnds2	STATE1b, STATE0b
+		pshufd 		MSG, MSG, 0x0E
+		sha256rnds2	STATE0, STATE1
+		sha256rnds2	STATE0b, STATE1b
+
+
+	movdqa		MSG, [SHA256PADDING + 6*16]
+		sha256rnds2	STATE1, STATE0
+		sha256rnds2	STATE1b, STATE0b
+		pshufd 		MSG, MSG, 0x0E
+		sha256rnds2	STATE0, STATE1
+		sha256rnds2	STATE0b, STATE1b
+
+
+	movdqa		MSG, [SHA256PADDING + 7*16]
+		sha256rnds2	STATE1, STATE0
+		sha256rnds2	STATE1b, STATE0b
+		pshufd 		MSG, MSG, 0x0E
+		sha256rnds2	STATE0, STATE1
+		sha256rnds2	STATE0b, STATE1b
+
+
+	movdqa		MSG, [SHA256PADDING + 8*16]
+		sha256rnds2	STATE1, STATE0
+		sha256rnds2	STATE1b, STATE0b
+		pshufd 		MSG, MSG, 0x0E
+		sha256rnds2	STATE0, STATE1
+		sha256rnds2	STATE0b, STATE1b
+
+
+	movdqa		MSG, [SHA256PADDING + 9*16]
+		sha256rnds2	STATE1, STATE0
+		sha256rnds2	STATE1b, STATE0b
+		pshufd 		MSG, MSG, 0x0E
+		sha256rnds2	STATE0, STATE1
+		sha256rnds2	STATE0b, STATE1b
+
+	movdqa		MSG, [SHA256PADDING + 10*16]
+		sha256rnds2	STATE1, STATE0
+		sha256rnds2	STATE1b, STATE0b
+		pshufd 		MSG, MSG, 0x0E
+		sha256rnds2	STATE0, STATE1
+		sha256rnds2	STATE0b, STATE1b
+
+
+	movdqa		MSG, [SHA256PADDING + 11*16]
+		sha256rnds2	STATE1, STATE0
+		sha256rnds2	STATE1b, STATE0b
+		pshufd 		MSG, MSG, 0x0E
+		sha256rnds2	STATE0, STATE1
+		sha256rnds2	STATE0b, STATE1b
+
+
+	movdqa		MSG, [SHA256PADDING + 12*16]
+		sha256rnds2	STATE1, STATE0
+		sha256rnds2	STATE1b, STATE0b
+		pshufd 		MSG, MSG, 0x0E
+		sha256rnds2	STATE0, STATE1
+		sha256rnds2	STATE0b, STATE1b
+
+
+	movdqa		MSG, [SHA256PADDING + 13*16]
+		sha256rnds2	STATE1, STATE0
+		sha256rnds2	STATE1b, STATE0b
+		pshufd 		MSG, MSG, 0x0E
+		sha256rnds2	STATE0, STATE1
+		sha256rnds2	STATE0b, STATE1b
+
+	movdqa		MSG, [SHA256PADDING + 14*16]
+		sha256rnds2	STATE1, STATE0
+		sha256rnds2	STATE1b, STATE0b
+		pshufd 		MSG, MSG, 0x0E
+		sha256rnds2	STATE0, STATE1
+		sha256rnds2	STATE0b, STATE1b
+
+
+	movdqa		MSG, [SHA256PADDING + 15*16]
+		sha256rnds2	STATE1, STATE0
+		sha256rnds2	STATE1b, STATE0b
+		pshufd 		MSG, MSG, 0x0E
+		sha256rnds2	STATE0, STATE1
+		sha256rnds2	STATE0b, STATE1b
+
+	paddd		STATE0, [ABEF_SAVEa wrt rip]
+	paddd		STATE1, [CDGH_SAVEa wrt rip]
+	paddd           STATE0b, [ABEF_SAVEb wrt rip]
+	paddd		STATE1b, [CDGH_SAVEb wrt rip]
+
+
+	;; Write hash values back in the correct order
+	pshufd		STATE0,  STATE0,  0x1B	; FEBA
+	pshufd		STATE1,  STATE1,  0xB1	; DCHG
+	pshufd		STATE0b,  STATE0b,  0x1B	; FEBA
+	pshufd		STATE1b,  STATE1b,  0xB1	; DCHG
+	movdqa		MSGTMP4, STATE0
+	movdqa		MSGTMP4b, STATE0b
+	pblendw		STATE0,  STATE1,  0xF0	; DCBA
+	pblendw		STATE0b,  STATE1b,  0xF0	; DCBA
+	palignr		STATE1,  MSGTMP4, 8	; HGFE
+	palignr		STATE1b,  MSGTMP4b, 8	; HGFE
+
+        pshufb          STATE0, SHUF_MASK
+        pshufb          STATE0b, SHUF_MASK
+        pshufb          STATE1, SHUF_MASK
+        pshufb          STATE1b, SHUF_MASK
+
+
+	movdqu		[OUTPUT_PTR + 0*16], STATE0
+	movdqu		[OUTPUT_PTR + 1*16], STATE1
+	movdqu		[OUTPUT_PTR + 2*16], STATE0b
+	movdqu		[OUTPUT_PTR + 3*16], STATE1b
+
+	;; Increment data pointer and loop if more to process
+	add		DATA_PTR, 128
+        add             OUTPUT_PTR, 64
+        
+	sub		NUM_BLKS,2
+        jmp             .hash_2_blocks
+
+.hash_1_block:
+
+        test            NUM_BLKS,NUM_BLKS
+        jz              .done_hash
+
+        movdqa          STATE0, [digest0 wrt rip]
+        movdqa          STATE1, [digest1 wrt rip]
 
 	;; Save hash values for addition after rounds
 	movdqa		ABEF_SAVE, STATE0
@@ -433,13 +957,6 @@ hash_64b_blocks:
 	movdqu		[OUTPUT_PTR + 0*16], STATE0
 	movdqu		[OUTPUT_PTR + 1*16], STATE1
 
-	;; Increment data pointer and loop if more to process
-	add		DATA_PTR, 64
-        add             OUTPUT_PTR, 32
-	cmp		DATA_PTR, NUM_BLKS
-	jne		.loop0
-
-
 .done_hash:
 %ifdef WINABI
 	movdqa		xmm6,  [rsp + frame.xmm_save + 0*16]
@@ -452,7 +969,7 @@ hash_64b_blocks:
 
 	ret	
 	
-section .data
+section .rodata
 align 64
 K256:
 	dd	0x428a2f98,0x71374491,0xb5c0fbcf,0xe9b5dba5
@@ -475,9 +992,9 @@ K256:
 PSHUFFLE_BYTE_FLIP_MASK: ddq 0x0c0d0e0f08090a0b0405060700010203
 
 digest0:
-        ddq      0x6a09e667bb67ae85510e527f9b05688c ;;0x6a09e667bb67ae853c6ef372a54ff53a    ;;  9b 51 bb 6a 
+        ddq      0x6a09e667bb67ae85510e527f9b05688c
 digest1:
-        ddq      0x3c6ef372a54ff53a1f83d9ab5be0cd19 ;;0x510e527f9b05688c1f83d9ab5be0cd19    ;;  5b 1f a5 3c
+        ddq      0x3c6ef372a54ff53a1f83d9ab5be0cd19
 
 padding:
         dd      0xc28a2f98, 0x71374491, 0xb5c0fbcf, 0xe9b5dba5
@@ -496,4 +1013,13 @@ padding:
         dd      0x521afaca, 0x31338431, 0x6ed41a95, 0x6d437890
         dd      0xc39c91f2, 0x9eccabbd, 0xb5c9a0e6, 0x532fb63c
         dd      0xd2c741c6, 0x7237ea3, 0xa4954b68, 0x4c191d76
+
+section .data
+
+align 64
+
+ABEF_SAVEa:     dd      0x9b05688c, 0x510e527f, 0xbb67ae85, 0x6a09e667
+CDGH_SAVEa:     dd      0x5be0cd19, 0x1f83d9ab, 0xa54ff53a, 0x3c6ef372
+ABEF_SAVEb:     dd      0x9b05688c, 0x510e527f, 0xbb67ae85, 0x6a09e667
+CDGH_SAVEb:     dd      0x5be0cd19, 0x1f83d9ab, 0xa54ff53a, 0x3c6ef372
 
