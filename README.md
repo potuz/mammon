@@ -5,6 +5,11 @@ Written in C++, currently only has basic types for phase0, their serialization a
 
 ## Build
 
+Warning: At times (for example now) this code will only build on specific CPUs.
+Currently it should only build on CPUs supporting SHA-ni extensions. I will
+update with runtime checks after different extensions assembly has been
+implemented. 
+
 ```
 $ mkdir build
 $ cd build
