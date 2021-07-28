@@ -14,7 +14,7 @@ enable_language(ASM_NASM)
 
 set(CMAKE_ASM_NASM_COMPILER "${NASM_EXECUTABLE}")
 
-if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+if(${CMAKE_BUILD_TYPE} STREQUAL "DEBUG")
     set(CMAKE_ASM_NASM_FLAGS "${ASM_NASM_FLAGS} -X gnu -g dwarf2")
 endif()
 
@@ -112,7 +112,15 @@ target_include_directories(test_bytes PUBLIC
 target_link_libraries(test_bytes
 		      crypto
                       yaml-cpp)
+
+add_executable(
+               test_sha256
+               ssz/test_sha256.cpp
+               ssz/sha256_avx2.asm
+              )
+
 enable_testing()
 
 add_test(test_ssz test_ssz)
 add_test(test_bytes test_bytes)
+add_test(test_sha256 test_sha256)

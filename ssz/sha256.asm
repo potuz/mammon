@@ -59,14 +59,15 @@
 %define OUTPUT_PTR	rcx 	; 1st arg
 %define DATA_PTR	rdx 	; 2nd arg
 %define NUM_BLKS 	r8	; 3rd arg
+%define SHA256PADDING   rdi
 %else
 %define OUTPUT_PTR	rdi	; 1st arg
 %define DATA_PTR	rsi	; 2nd arg
 %define NUM_BLKS	rdx	; 3rd arg
+%define SHA256PADDING   rcx
 %endif
 
 %define SHA256CONSTANTS	rax
-%define SHA256PADDING   rcx
 
 
 %ifdef WINABI
@@ -103,8 +104,8 @@ endstruc
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; void sha256_update(uint32_t *digest, const void *data, uint32_t numBlocks);
-;; arg 1 : pointer to digest
+;; void sha256_update(uint32_t *output, const void *data, uint32_t numBlocks);
+;; arg 1 : pointer to output digest
 ;; arg 2 : pointer to input data
 ;; arg 3 : Number of blocks to process
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -126,18 +127,18 @@ hash_64b_blocks:
 
 	movdqa		SHUF_MASK, [PSHUFFLE_BYTE_FLIP_MASK wrt rip]
 	lea		SHA256CONSTANTS,[K256 wrt rip]
-	lea		SHA256PADDING,[padding wrt rip]
+	lea		SHA256PADDING,[PADDING wrt rip]
 
 
 .hash_2_blocks:
         cmp             NUM_BLKS, 2
 	jl		.hash_1_block
 
-        movdqa          STATE0, [digest0 wrt rip]
-        movdqa          STATE1, [digest1 wrt rip]
+        movdqa          STATE0, [DIGEST wrt rip]
+        movdqa          STATE1, [DIGEST + 16 wrt rip]
 
-        movdqa          STATE0b, [digest0 wrt rip]
-        movdqa          STATE1b, [digest1 wrt rip]
+        movdqa          STATE0b, [DIGEST wrt rip]
+        movdqa          STATE1b, [DIGEST + 16 wrt rip]
 
 	;; Rounds 0-3
 	movdqu		MSG, [DATA_PTR + 0*16]
@@ -468,12 +469,12 @@ hash_64b_blocks:
 		sha256rnds2	STATE0b, STATE1b
 
        
-	paddd		STATE0, [digest0 wrt rip]
-	paddd		STATE1, [digest1 wrt rip]
-	paddd           STATE0b, [digest0 wrt rip]
-	paddd		STATE1b, [digest1 wrt rip]
+	paddd		STATE0, [DIGEST wrt rip]
+	paddd		STATE1, [DIGEST + 16 wrt rip]
+	paddd           STATE0b, [DIGEST wrt rip]
+	paddd		STATE1b, [DIGEST + 16 wrt rip]
 
-        ;; Rounds with padding
+        ;; Rounds with PADDING
         
 	;; Save hash values for addition after rounds
 	movdqa		[ABEF_SAVEa wrt rip], STATE0
@@ -648,8 +649,8 @@ hash_64b_blocks:
         test            NUM_BLKS,NUM_BLKS
         jz              .done_hash
 
-        movdqa          STATE0, [digest0 wrt rip]
-        movdqa          STATE1, [digest1 wrt rip]
+        movdqa          STATE0, [DIGEST wrt rip]
+        movdqa          STATE1, [DIGEST + 16 wrt rip]
 
 	;; Save hash values for addition after rounds
 	movdqa		ABEF_SAVE, STATE0
@@ -839,7 +840,7 @@ hash_64b_blocks:
 	paddd		STATE0, ABEF_SAVE
 	paddd		STATE1, CDGH_SAVE
 
-        ;; Rounds with padding
+        ;; Rounds with PADDING
 	;; Save hash values for addition after rounds
 	movdqa		ABEF_SAVE, STATE0
 	movdqa		CDGH_SAVE, STATE1
@@ -991,12 +992,11 @@ K256:
 
 PSHUFFLE_BYTE_FLIP_MASK: ddq 0x0c0d0e0f08090a0b0405060700010203
 
-digest0:
+DIGEST:
         ddq      0x6a09e667bb67ae85510e527f9b05688c
-digest1:
         ddq      0x3c6ef372a54ff53a1f83d9ab5be0cd19
 
-padding:
+PADDING:
         dd      0xc28a2f98, 0x71374491, 0xb5c0fbcf, 0xe9b5dba5
         dd      0x3956c25b, 0x59f111f1, 0x923f82a4, 0xab1c5ed5
         dd      0xd807aa98, 0x12835b01, 0x243185be, 0x550c7dc3
