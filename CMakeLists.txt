@@ -116,6 +116,8 @@ target_link_libraries(test_bytes
 add_executable(
                test_sha256
                ssz/test_sha256.cpp
+               ssz/sha256_avx_one_block.asm
+               ssz/sha256_avx.asm
                ssz/sha256_avx2.asm
               )
 

@@ -1,3 +1,27 @@
+;;  sha256_avx2.asm
+; *
+; *  This file is part of Mammon.
+; *  mammon is a greedy and selfish ETH consensus client.
+; *
+; *  Copyright (c) 2021 - Reimundo Heluani (potuz) potuz@potuz.net
+; *
+; *  This program is free software: you can redistribute it and/or modify
+; *  it under the terms of the GNU General Public License as published by
+; *  the Free Software Foundation, either version 3 of the License, or
+; *  (at your option) any later version.
+; *
+; *  This program is distributed in the hope that it will be useful,
+; *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+; *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+; *  GNU General Public License for more details.
+; *
+;  You should have received a copy of the GNU General Public License
+;  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+;
+;  This implementation is a 64bytes optimized implementation based on Intel's code
+;  whose copyright follows
+;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;
 ;; Copyright (c) 2012-2021, Intel Corporation
 ;;
@@ -41,9 +65,12 @@
 
 %include "ssz/transpose_avx2.asm"
 
+extern sha_256_mult_avx
+
 section .data
 default rel
 align 64
+
 K256_8:
 	dq	0x428a2f98428a2f98, 0x428a2f98428a2f98
 	dq	0x428a2f98428a2f98, 0x428a2f98428a2f98
@@ -307,7 +334,7 @@ PADDING_8:
 
 
 DIGEST_8:
-        dd      0x6a09e6676a09e6676a09e6676a09e667, 0x6a09e667, 0x6a09e667, 0x6a09e667
+        dd      0x6a09e667, 0x6a09e667, 0x6a09e667, 0x6a09e667
         dd      0x6a09e667, 0x6a09e667, 0x6a09e667, 0x6a09e667
 	dd 	0xbb67ae85, 0xbb67ae85, 0xbb67ae85, 0xbb67ae85 
 	dd 	0xbb67ae85, 0xbb67ae85, 0xbb67ae85, 0xbb67ae85 
@@ -334,13 +361,13 @@ section .text
 %ifdef WINABI
 	%define OUTPUT_PTR	rcx 	; 1st arg
 	%define DATA_PTR	rdx 	; 2nd arg
-	%define NUM_BLOCKS 	r8	; 3rd arg
+	%define NUM_BLKS 	r8	; 3rd arg
 	%define TBL 		rsi
 	%define reg1		rdi
 %else
 	%define OUTPUT_PTR	rdi	; 1st arg
 	%define DATA_PTR	rsi	; 2nd arg
-	%define NUM_BLOCKS	rdx	; 3rd arg
+	%define NUM_BLKS	rdx	; 3rd arg
 	%define TBL 		rcx
 	%define reg1 		r8
 %endif
@@ -596,6 +623,10 @@ sha256_oct_avx2:
 	mov	[R14], r14
 	mov	[R15], r15
 	
+.hash_8_blocks:
+	cmp 	NUM_BLKS, 8
+	jl 	.hash_4_blocks
+	xor	ROUND, ROUND
 
 	lea TBL,[rel DIGEST_8]
 	vmovdqa	a,[TBL + 0*32]
@@ -608,20 +639,7 @@ sha256_oct_avx2:
 	vmovdqa	h,[TBL + 7*32]
 
 	lea	TBL,[rel K256_8]
-
-.hash_8_blocks:
-	xor	ROUND, ROUND
-
-	;; save old digest
-	vmovdqa	[rsp + _DIGEST + 0*SZ8], a
-	vmovdqa	[rsp + _DIGEST + 1*SZ8], b
-	vmovdqa	[rsp + _DIGEST + 2*SZ8], c
-	vmovdqa	[rsp + _DIGEST + 3*SZ8], d
-	vmovdqa	[rsp + _DIGEST + 4*SZ8], e
-	vmovdqa	[rsp + _DIGEST + 5*SZ8], f
-	vmovdqa	[rsp + _DIGEST + 6*SZ8], g
-	vmovdqa	[rsp + _DIGEST + 7*SZ8], h
-
+	
 %assign i 0
 %rep 2
 	TRANSPOSE8_U32_LOAD8 TT0, TT1, TT2, TT3, TT4, TT5, TT6, TT7, \
@@ -682,14 +700,15 @@ align 16
 	jb	.Lrounds_16_xx
 
 	;; add old digest
-	vpaddd	a, a, [rsp + _DIGEST + 0*SZ8]
-	vpaddd	b, b, [rsp + _DIGEST + 1*SZ8]
-	vpaddd	c, c, [rsp + _DIGEST + 2*SZ8]
-	vpaddd	d, d, [rsp + _DIGEST + 3*SZ8]
-	vpaddd	e, e, [rsp + _DIGEST + 4*SZ8]
-	vpaddd	f, f, [rsp + _DIGEST + 5*SZ8]
-	vpaddd	g, g, [rsp + _DIGEST + 6*SZ8]
-	vpaddd	h, h, [rsp + _DIGEST + 7*SZ8]
+	lea TBL,[rel DIGEST_8]
+	vpaddd	a, a, [TBL + 0*SZ8]
+	vpaddd	b, b, [TBL + 1*SZ8]
+	vpaddd	c, c, [TBL + 2*SZ8]
+	vpaddd	d, d, [TBL + 3*SZ8]
+	vpaddd	e, e, [TBL + 4*SZ8]
+	vpaddd	f, f, [TBL + 5*SZ8]
+	vpaddd	g, g, [TBL + 6*SZ8]
+	vpaddd	h, h, [TBL + 7*SZ8]
 
 	;; rounds with padding
 
@@ -741,12 +760,15 @@ align 16
 
 	; update pointers and loop
 
-        ;add 	DATA_PTR, 64*8
-	;add 	OUTPUT_PTR, 32*8
-	;sub 	NUM_BLOCKS, 8
+        add 	DATA_PTR, 64*8
+	add 	OUTPUT_PTR, 32*8
+	sub 	NUM_BLKS, 8
 
-	;jmp     .hash_8_blocks
+	jmp     .hash_8_blocks
 
+.hash_4_blocks:
+
+	;call  	sha_256_mult_avx
 
 	mov	r12,[R12]
 	mov	r13,[R13]
