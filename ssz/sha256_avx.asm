@@ -116,7 +116,7 @@ extern sha256_1_avx
 struc STACK
 _DATA:		resb	SZ4 * 16
 _DIGEST:	resb	SZ4 * NUM_SHA256_DIGEST_WORDS
-		resb	8 	; for alignment, must be odd multiple of 8
+		resb	24 	
 endstruc
 
 %define VMOVPS	vmovups
@@ -557,10 +557,21 @@ align 16
 	vpaddd	g, g, [rsp + _DIGEST + 6*SZ4]
 	vpaddd	h, h, [rsp + _DIGEST + 7*SZ4]
 
-	;; transpose the digest to get the registers correctly
+	;; transpose the digest and convert to little endian to get the registers correctly
 
 	TRANSPOSE a, b, c, d, TT0, TT1
         TRANSPOSE e, f, g, h, TT2, TT1
+
+	vmovdqa	TMP, [rel PSHUFFLE_BYTE_FLIP_MASK]
+        vpshufb TT0, TMP
+        vpshufb TT2, TMP
+        vpshufb b, TMP
+        vpshufb f, TMP
+        vpshufb a, TMP
+        vpshufb e, TMP
+        vpshufb d, TMP
+        vpshufb h, TMP
+
 
 	;; write to output
 

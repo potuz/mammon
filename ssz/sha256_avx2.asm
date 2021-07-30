@@ -356,6 +356,9 @@ PSHUFFLE_BYTE_FLIP_MASK:
 	dq 0x0405060700010203, 0x0c0d0e0f08090a0b
 	dq 0x0405060700010203, 0x0c0d0e0f08090a0b
 
+STACK_ALIGNMENT_MASK:
+	dq 0xffffffffffffffe0
+
 section .text
 
 %ifdef WINABI
@@ -444,7 +447,6 @@ struc stack_frame
   .digest	resb	8*SZ8
   .ytmp		resb	4*SZ8
   .regsave	resb    4*64
-  .align	resb	24
 endstruc
 %define FRAMESZ	stack_frame_size
 %define _DIGEST	stack_frame.digest
@@ -612,11 +614,14 @@ endstruc
 
 
 
-global sha256_oct_avx2:function
+global sha256_8_avx2:function
 align 16
-sha256_oct_avx2:
+sha256_8_avx2:
         endbranch64
 	; outer calling routine saves all the XMM registers
+	push 	rbp
+	mov     rbp,rsp
+	and 	rsp, [rel STACK_ALIGNMENT_MASK]
 	sub	rsp, FRAMESZ
 	mov	[R12], r12
 	mov	[R13], r13
@@ -743,9 +748,18 @@ align 16
 	vpaddd	h, h, [rsp + _DIGEST + 7*SZ8]
 
 
-	;; transpose the digest to get the registers correctly
+	;; transpose the digest and convert to little endian to get the registers correctly
 
 	TRANSPOSE8_U32 a, b, c, d, e, f, g, h, TT0, TT1
+	vmovdqa	TT0, [rel PSHUFFLE_BYTE_FLIP_MASK]
+	vpshufb	a, a, TT0
+	vpshufb	b, b, TT0
+	vpshufb	c, c, TT0
+	vpshufb	d, d, TT0
+	vpshufb	e, e, TT0
+	vpshufb	f, f, TT0
+	vpshufb	g, g, TT0
+	vpshufb	h, h, TT0
 
 	;; write to output
 
@@ -775,7 +789,8 @@ align 16
 	mov	r14,[R14]
 	mov	r15,[R15]
 
-	add rsp, FRAMESZ
+	mov     rsp,rbp
+	pop     rbp
 	ret
 
 %ifdef LINUX

@@ -23,12 +23,12 @@
 
 #include "ssz/hasher.hpp"
 
-extern "C" void sha256_oct_avx2(unsigned char* output, const unsigned char* input, std::size_t blocks);
+extern "C" void sha256_8_avx2(unsigned char* output, const unsigned char* input, std::size_t blocks);
 
 namespace ssz::Hasher {
 
 SHA256_hasher best_sha256_implementation() {
-    return &sha256_oct_avx2;
+    return &sha256_8_avx2;
 }
 
 } // namespace ssz::Hasher

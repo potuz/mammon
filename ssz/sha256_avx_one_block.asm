@@ -121,7 +121,7 @@ section .text
 %ifdef WINABI
 	%define OUTPUT_PTR	rcx 	; 1st arg
 	%define DATA_PTR	rdx 	; 2nd arg
-	%define d        	r8      ; 3rd
+	%define d        	r8d     ; 3rd
 	%define TBL 		rsi
         %define c               edi
 %else
@@ -147,13 +147,12 @@ section .text
 
 
 struc STACK
-%ifdef WINABI
-                resb    24 ; alignment
-_XMM_SAVE:	reso	8
-%endif
-                resb    8 ; alignment
 _XFER:		reso	1
 _DIGEST         reso    1
+%ifdef WINABI
+_XMM_SAVE:	reso	8
+                resb    16 ; alignment
+%endif
 endstruc
 
 ; rotate_Xs
@@ -591,6 +590,16 @@ align 16
         add   f, [rsp + _DIGEST + 5*4]
         add   g, [rsp + _DIGEST + 6*4]
         add   h, [rsp + _DIGEST + 7*4]
+
+        ;; shuffle the bytes to little endian
+        bswap  a
+        bswap  b
+        bswap  c
+        bswap  d
+        bswap  e
+        bswap  f
+        bswap  g
+        bswap  h
 
         ;; write resulting hash
         mov   [OUTPUT_PTR + 0*4], a
