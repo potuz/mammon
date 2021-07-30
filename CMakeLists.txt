@@ -132,6 +132,7 @@ add_executable(
                ssz/sha256_avx_one_block.asm
                ssz/sha256_avx.asm
                ssz/sha256_avx2.asm
+               ssz/sha256.asm
               )
 
 enable_testing()

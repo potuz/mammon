@@ -19,15 +19,21 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <cstddef>
+#include <cpuid.h>
+#include <cstdint>
 
 #include "ssz/hasher.hpp"
 
 extern "C" void sha256_8_avx2(unsigned char* output, const unsigned char* input, std::size_t blocks);
+extern "C" void sha256_shani(unsigned char* output, const unsigned char* input, std::size_t blocks);
 
 namespace ssz::Hasher {
 
 SHA256_hasher best_sha256_implementation() {
+    std::uint32_t a,b,c,d; 
+    __get_cpuid_count(7,0,&a,&b,&c,&d);
+    if (b & bit_SHA)
+        return &sha256_shani;
     return &sha256_8_avx2;
 }
 

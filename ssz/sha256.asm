@@ -110,9 +110,9 @@ endstruc
 ;; arg 3 : Number of blocks to process
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 section .text
-global hash_64b_blocks:function
+global sha256_shani:function
 align 32
-hash_64b_blocks:
+sha256_shani:
 %ifdef WINABI
 	mov		RSPSAVE, rsp
 	sub		rsp, frame_size
