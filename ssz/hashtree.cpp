@@ -19,43 +19,25 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "ssz/hashtree.hpp"
-
-#include <openssl/sha.h>
-
 #include <stdexcept>
 
 #include "common/bytes.hpp"
 #include "helpers/math.hpp"
+#include "ssz/hasher.hpp"
+#include "ssz/hashtree.hpp"
 #include "ssz/ssz.hpp"
-extern "C" void hash_64b_blocks(unsigned char* output, const unsigned char* input, size_t blocks);
 
 namespace {
 using namespace ssz;
-
-/*
-void hash_64b_blocks(unsigned char* output, const unsigned char* input, size_t blocks) {
-    SHA256_CTX sha256;
-    while (blocks) {
-        SHA256_Init(&sha256);
-        SHA256_Update(&sha256, input, 2 * constants::BYTES_PER_CHUNK);
-        SHA256_Final(output, &sha256);
-        blocks--;
-        output += constants::BYTES_PER_CHUNK;     // NOLINT
-        input += 2 * constants::BYTES_PER_CHUNK;  // NOLINT
-    }
-}
-*/
 Chunk hash_2_chunks(const Chunk& first, const Chunk& second) {
     std::array<std::uint8_t, 2 * constants::BYTES_PER_CHUNK> sum;  // NOLINT
     std::copy(first.begin(), first.end(), sum.begin());
     std::copy(second.begin(), second.end(), sum.begin() + constants::BYTES_PER_CHUNK);
     Chunk ret;
-    hash_64b_blocks(ret.data(), sum.data(), 1);
+    Hasher::hash_64b_blocks(ret.data(), sum.data(), 1);
     return ret;
 }
 // clang-format off
-
 const auto ZERO_HASH_DEPTH{42};
 constexpr Chunk zero_hash{};
 
@@ -94,12 +76,12 @@ void merkleize(const std::vector<Chunk>& vec, std::vector<Chunk>& hash_tree, std
     auto depth = helpers::log2ceil(limit);
     auto first = hash_tree.begin();
     auto last = first + (vec.size() + 1) / 2;  // NOLINT
-    if (vec.size() > 1) hash_64b_blocks(hash_tree[0].begin(), vec[0].begin(), vec.size() / 2);
+    if (vec.size() > 1) Hasher::hash_64b_blocks(hash_tree[0].begin(), vec[0].begin(), vec.size() / 2);
     if (vec.size() % 2) *std::prev(last) = hash_2_chunks(vec.back(), zero_hash);
     auto dist = std::distance(first, last);
     auto height = 1;
     while (dist > 1) {
-        hash_64b_blocks((*last).begin(), (*first).begin(), dist / 2);
+        Hasher::hash_64b_blocks((*last).begin(), (*first).begin(), dist / 2);
         first = last;
         last += (dist + 1) / 2;
         if (dist % 2) *std::prev(last) = hash_2_chunks(*std::prev(first), zero_hash_array[height]);  // NOLINT

@@ -463,13 +463,10 @@ sha256_4_avx:
 	; outer calling routine saves all the XMM registers
 	sub	rsp, STACK_size
 
-        test    NUM_BLKS,NUM_BLKS
-        jz      .done_hash
-
+.hash_4_blocks:
 	cmp 	NUM_BLKS, 4
 	jl 	.hash_1_block
 
-.hash_4_blocks:
 	xor	ROUND, ROUND
 
 	;; Load the pre-transposed incoming digest.
@@ -581,16 +578,16 @@ align 16
         add 	DATA_PTR, 64*4
 	add 	OUTPUT_PTR, 32*4
 	sub 	NUM_BLKS, 4
-        jz      .done_hash
-        cmp     NUM_BLKS, 4
-        jge     .hash_4_blocks
+        jmp     .hash_4_blocks
 
 .hash_1_block:
+        test     NUM_BLKS,NUM_BLKS
+        jz      .done_hash
         call    sha256_1_avx
         add     DATA_PTR, 64
         add     OUTPUT_PTR, 32
         dec     NUM_BLKS
-        jnz     .hash_1_block
+        jmp     .hash_1_block
 
 .done_hash:
 	add	rsp, STACK_size

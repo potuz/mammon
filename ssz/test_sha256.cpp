@@ -24,6 +24,7 @@
 #include <vector>
 
 #include "include/acutest.h"
+#include "ssz/hasher.hpp"
 #include "ssz/ssz.hpp"
 
 using namespace ssz;
@@ -135,9 +136,17 @@ void test_hash_avx2_8() {
     TEST_CHECK(digest == test_8_digests);
 }
 
+void test_hasher() {
+    std::array<std::uint8_t, AVX2_MAX_LANES * BYTES_PER_CHUNK> digest {};
+    ssz::Hasher::hash_64b_blocks(digest.begin(), test_8_block.begin(), AVX2_MAX_LANES);
+
+    TEST_CHECK(digest == test_8_digests);
+}
+
 // NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables)
 
 TEST_LIST = {{"hash_avx_1", test_hash_avx_1},
              {"hash_avx_4", test_hash_avx_4},
              {"hash_avx2_8", test_hash_avx2_8},
+             {"hasher", test_hasher},
              {NULL, NULL}};

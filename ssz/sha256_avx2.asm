@@ -65,7 +65,7 @@
 
 %include "ssz/transpose_avx2.asm"
 
-extern sha_256_mult_avx
+extern sha256_4_avx
 
 section .data
 default rel
@@ -768,7 +768,7 @@ align 16
 
 .hash_4_blocks:
 
-	;call  	sha_256_mult_avx
+	call  	sha256_4_avx
 
 	mov	r12,[R12]
 	mov	r13,[R13]

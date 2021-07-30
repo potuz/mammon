@@ -66,8 +66,12 @@ endif()
 
 add_executable (beacon-chain
         common/bitlist.cpp
+        ssz/hasher.cpp
 	ssz/hashtree.cpp
 	ssz/sha256.asm
+        ssz/sha256_avx_one_block.asm
+        ssz/sha256_avx.asm
+        ssz/sha256_avx2.asm
         ssz/ssz_container.cpp
 	beacon-chain/main.cpp
 	)
@@ -87,6 +91,10 @@ add_executable(test_ssz
 	 	beacon-chain/test/test_ssz.cpp
                 common/bitlist.cpp
                 ssz/sha256.asm
+                ssz/sha256_avx.asm
+                ssz/sha256_avx_one_block.asm
+                ssz/sha256_avx2.asm
+                ssz/hasher.cpp
                 ssz/hashtree.cpp
 		)
 
@@ -102,7 +110,11 @@ target_link_libraries(test_ssz
 add_executable(test_bytes
                 ssz/ssz_container.cpp
                 ssz/hashtree.cpp
+                ssz/hasher.cpp
                 ssz/sha256.asm
+                ssz/sha256_avx.asm
+                ssz/sha256_avx_one_block.asm
+                ssz/sha256_avx2.asm
                 common/bytes_test.cpp)
 
 target_include_directories(test_bytes PUBLIC
@@ -116,6 +128,7 @@ target_link_libraries(test_bytes
 add_executable(
                test_sha256
                ssz/test_sha256.cpp
+               ssz/hasher.cpp
                ssz/sha256_avx_one_block.asm
                ssz/sha256_avx.asm
                ssz/sha256_avx2.asm
