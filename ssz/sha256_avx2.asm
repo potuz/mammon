@@ -53,12 +53,12 @@
 ;; outer calling routine takes care of save and restore of XMM registers
 ;; Logic designed/laid out by JDG
 
-;; Function clobbers: rax, rcx, rdx,   rbx, rsi, rdi, r9-r15; ymm0-15
+;; Function clobbers: rax, rcx, rdx, rsi, rdi, r9-r15; ymm0-15
 ;; Stack must be aligned to 32 bytes before call
-;; Windows clobbers:  rax rbx     rdx rsi rdi     r8 r9 r10 r11 r12 r13 r14
+;; Windows clobbers:  rax rdx rsi rdi     r8 r9 r10 r11 r12 r13 r14
 ;; Windows preserves:         rcx             rbp                           r15
 ;;
-;; Linux clobbers:    rax rbx rcx rdx rsi         r8 r9 r10 r11 r12 r13 r14
+;; Linux clobbers:    rax rcx rdx rsi         r8 r9 r10 r11 r12 r13 r14
 ;; Linux preserves:                       rdi rbp                           r15
 ;;
 ;; clobbers ymm0-15
@@ -375,8 +375,7 @@ section .text
 	%define reg1 		r8
 %endif
 
-%define DIGEST     rax
-%define ROUND	rbx
+%define ROUND	rax
 
 %define inp0 r9
 %define inp1 r10
@@ -633,15 +632,15 @@ sha256_8_avx2:
 	jl 	.hash_4_blocks
 	xor	ROUND, ROUND
 
-	lea DIGEST,[rel DIGEST_8]
-	vmovdqa	a,[DIGEST + 0*32]
-	vmovdqa	b,[DIGEST + 1*32]
-	vmovdqa	c,[DIGEST + 2*32]
-	vmovdqa	d,[DIGEST + 3*32]
-	vmovdqa	e,[DIGEST + 4*32]
-	vmovdqa	f,[DIGEST + 5*32]
-	vmovdqa	g,[DIGEST + 6*32]
-	vmovdqa	h,[DIGEST + 7*32]
+	lea TBL,[rel DIGEST_8]
+	vmovdqa	a,[TBL + 0*32]
+	vmovdqa	b,[TBL + 1*32]
+	vmovdqa	c,[TBL + 2*32]
+	vmovdqa	d,[TBL + 3*32]
+	vmovdqa	e,[TBL + 4*32]
+	vmovdqa	f,[TBL + 5*32]
+	vmovdqa	g,[TBL + 6*32]
+	vmovdqa	h,[TBL + 7*32]
 
 	lea	TBL,[rel K256_8]
 	
@@ -705,14 +704,15 @@ align 16
 	jb	.Lrounds_16_xx
 
 	;; add old digest
-	vpaddd	a, a, [DIGEST + 0*SZ8]
-	vpaddd	b, b, [DIGEST + 1*SZ8]
-	vpaddd	c, c, [DIGEST + 2*SZ8]
-	vpaddd	d, d, [DIGEST + 3*SZ8]
-	vpaddd	e, e, [DIGEST + 4*SZ8]
-	vpaddd	f, f, [DIGEST + 5*SZ8]
-	vpaddd	g, g, [DIGEST + 6*SZ8]
-	vpaddd	h, h, [DIGEST + 7*SZ8]
+	lea TBL,[rel DIGEST_8]
+	vpaddd	a, a, [TBL + 0*SZ8]
+	vpaddd	b, b, [TBL + 1*SZ8]
+	vpaddd	c, c, [TBL + 2*SZ8]
+	vpaddd	d, d, [TBL + 3*SZ8]
+	vpaddd	e, e, [TBL + 4*SZ8]
+	vpaddd	f, f, [TBL + 5*SZ8]
+	vpaddd	g, g, [TBL + 6*SZ8]
+	vpaddd	h, h, [TBL + 7*SZ8]
 
 	;; rounds with padding
 

@@ -54,10 +54,10 @@
 ;; Logic designed/laid out by JDG
 
 ;; Stack must be aligned to 16 bytes before call
-;; Windows clobbers:  rax rbx     rdx             r8 r9 r10 r11 
+;; Windows clobbers:  rax rdx             r8 r9 r10 r11 
 ;; Windows preserves:         rcx     rsi rdi rbp                r12 r13 r14 r15
 ;;
-;; Linux clobbers:    rax rbx         rsi         r8 r9 r10 r11 
+;; Linux clobbers:    rax rsi         r8 r9 r10 r11 
 ;; Linux preserves:           rcx rdx     rdi rbp                r12 r13 r14 r15
 ;;
 ;; clobbers xmm0-15
@@ -114,9 +114,10 @@ extern sha256_1_avx
 
 ; Define stack usage
 struc STACK
-_DATA:		resb	SZ4 * 16
-_DIGEST:	resb	SZ4 * NUM_SHA256_DIGEST_WORDS
-		resb	24 	
+	_DATA:		resb	SZ4 * 16
+	_DIGEST:	resb	SZ4 * NUM_SHA256_DIGEST_WORDS
+	_RBX: 		resb	8
+			resb 	16 	
 endstruc
 
 %define VMOVPS	vmovups
@@ -462,6 +463,7 @@ sha256_4_avx:
         endbranch64
 	; outer calling routine saves all the XMM registers
 	sub	rsp, STACK_size
+	mov     [rsp + _RBX],rbx
 
 .hash_4_blocks:
 	cmp 	NUM_BLKS, 4
@@ -601,6 +603,7 @@ align 16
         jmp     .hash_1_block
 
 .done_hash:
+	mov     rbx,[rsp + _RBX]
 	add	rsp, STACK_size
 	ret
 
