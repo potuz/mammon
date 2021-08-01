@@ -21,11 +21,13 @@
 
 #pragma once
 
+#include <cstdint>
+
 namespace ssz::Hasher {
 
-typedef void (*SHA256_hasher) (unsigned char*, const unsigned char*, std::size_t);
+typedef void (*SHA256_hasher)(unsigned char*, const unsigned char*, std::size_t);
 
 SHA256_hasher best_sha256_implementation();
 const auto hash_64b_blocks = best_sha256_implementation();
 
-} // namespace ssz::Hasher
+}  // namespace ssz::Hasher
