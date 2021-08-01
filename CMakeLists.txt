@@ -24,7 +24,6 @@ set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -lstdc++")
 set( CMAKE_EXPORT_COMPILE_COMMANDS ON ) #youcompleteme
 set( CMAKE_INCLUDE_CURRENT_DIR ON)
 
-find_package(OpenSSL REQUIRED)
 find_package(Snappy REQUIRED)
 if(Snappy_FOUND)
 	message(STATUS "Found Snappy")
@@ -82,7 +81,6 @@ target_include_directories(beacon-chain PUBLIC
 
 
 target_link_libraries(beacon-chain
-	 	      crypto
                       snappy
                       yaml-cpp)
 
@@ -103,7 +101,6 @@ target_include_directories(test_ssz PUBLIC
 			  )
 
 target_link_libraries(test_ssz
-                      crypto
                       snappy
                       yaml-cpp)
 
@@ -122,7 +119,6 @@ target_include_directories(test_bytes PUBLIC
 			  )
 
 target_link_libraries(test_bytes
-		      crypto
                       yaml-cpp)
 
 add_executable(
