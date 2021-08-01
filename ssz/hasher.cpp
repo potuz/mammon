@@ -19,25 +19,47 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "ssz/hasher.hpp"
-
 #include <cpuid.h>
 
+#include "ssz/hasher.hpp"
+#include "ssz/ssz.hpp"
 
-extern "C" void sha256_8_avx2(unsigned char* output, const unsigned char* input, std::size_t blocks);
-extern "C" void sha256_shani(unsigned char* output, const unsigned char* input, std::size_t blocks);
+extern "C" void sha256_1_avx(unsigned char* output, const unsigned char* input);
 
 namespace {
 constexpr auto CPUID_LEAF = 7;
 }
 
 namespace ssz::Hasher {
+void sha256_sse(unsigned char* output, const unsigned char* input, std::size_t blocks) {
+    while (blocks) {
+        sha256_1_avx(output, input);
+        input += 2*constants::BYTES_PER_CHUNK;
+        output += constants::BYTES_PER_CHUNK;
+        blocks--;
+    }
+}
 
-SHA256_hasher best_sha256_implementation() {
+const IMPL implemented() {
+    IMPL ret = NONE; 
     std::uint32_t a, b, c, d;  // NOLINT
     __get_cpuid_count(CPUID_LEAF, 0, &a, &b, &c, &d);
-    if (b & bit_SHA) return &sha256_shani;
-    return &sha256_8_avx2;
+    if (b & bit_SHA) ret = ret | SHA;
+    if (b & bit_AVX2) ret = ret | AVX2;
+
+    __get_cpuid(1, &a, &b, &c, &d);
+    if (c & bit_AVX) ret = ret |  AVX;
+    if (c & bit_SSE3) ret = ret | SSE;
+
+    return ret;
+}
+
+SHA256_hasher best_sha256_implementation() {
+    auto impl = implemented(); 
+    if (impl & SHA) return &::sha256_shani;
+    if (impl & AVX2) return &::sha256_8_avx2;
+    if (impl & AVX) return &::sha256_4_avx;
+    return &sha256_sse;
 }
 
 }  // namespace ssz::Hasher

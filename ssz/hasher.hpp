@@ -21,13 +21,40 @@
 
 #pragma once
 
+#include <bits/c++config.h>
 #include <cstdint>
+
+extern "C" void sha256_4_avx(unsigned char* output, const unsigned char* input, std::size_t blocks);
+extern "C" void sha256_8_avx2(unsigned char* output, const unsigned char* input, std::size_t blocks);
+extern "C" void sha256_shani(unsigned char* output, const unsigned char* input, std::size_t blocks);
 
 namespace ssz::Hasher {
 
+enum IMPL {
+    NONE = 0,
+    SSE  = 1,
+    AVX  = 2,
+    AVX2 = 4,
+    SHA  = 8
+};
+
+inline IMPL operator |(IMPL a, IMPL b) noexcept {
+    return static_cast<IMPL>(static_cast<int>(a) | static_cast<int>(b));
+}
+
+inline IMPL operator &(IMPL a, IMPL b) noexcept {
+    return static_cast<IMPL>(static_cast<int>(a) & static_cast<int>(b));
+}
 typedef void (*SHA256_hasher)(unsigned char*, const unsigned char*, std::size_t);
 
+const IMPL implemented(); 
 SHA256_hasher best_sha256_implementation();
 const auto hash_64b_blocks = best_sha256_implementation();
+
+void sha256_sse(unsigned char* output, const unsigned char* input, std::size_t blocks);
+
+constexpr auto sha256_4_avx = ::sha256_4_avx;
+constexpr auto sha256_8_avx2 = ::sha256_8_avx2;
+constexpr auto sha256_shani = ::sha256_shani;
 
 }  // namespace ssz::Hasher

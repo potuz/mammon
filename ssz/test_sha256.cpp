@@ -98,31 +98,51 @@ constexpr std::array<std::uint8_t, AVX2_MAX_LANES * BYTES_PER_CHUNK> test_8_dige
 
 }  // namespace
 
-using namespace ssz::Hasher;
+using namespace ssz;
 
-void test_hash_avx_1() {
-    std::array<std::uint8_t, BYTES_PER_CHUNK> digest{};
-    hash_64b_blocks(digest.begin(), test_8_block.begin(), 1);
+void test_hash_sse_1() {
+    auto impl = Hasher::implemented();
+    if (impl & Hasher::SSE) {
+        std::array<std::uint8_t, BYTES_PER_CHUNK> digest{};
+        Hasher::sha256_sse(digest.begin(), test_8_block.begin(), 1);
 
-    TEST_CHECK(digest == test_1_digest);  // NOLINT
+        TEST_CHECK(digest == test_1_digest);  // NOLINT
+    }
 }
 
 void test_hash_avx_4() {
-    std::array<std::uint8_t, AVX_MAX_LANES * BYTES_PER_CHUNK> digest{};
-    hash_64b_blocks(digest.begin(), test_8_block.begin(), AVX_MAX_LANES);
+    auto impl = Hasher::implemented();
+    if (impl & Hasher::AVX) {
+        std::array<std::uint8_t, AVX_MAX_LANES * BYTES_PER_CHUNK> digest{};
+        Hasher::sha256_4_avx(digest.begin(), test_8_block.begin(), AVX_MAX_LANES);
 
-    TEST_CHECK(digest == test_4_digests);  // NOLINT
+        TEST_CHECK(digest == test_4_digests);  // NOLINT
+    }
 }
 
 void test_hash_avx2_8() {
-    std::array<std::uint8_t, AVX2_MAX_LANES * BYTES_PER_CHUNK> digest{};
-    hash_64b_blocks(digest.begin(), test_8_block.begin(), AVX2_MAX_LANES);
+    auto impl = Hasher::implemented();
+    if (impl & Hasher::AVX2) {
+        std::array<std::uint8_t, AVX2_MAX_LANES * BYTES_PER_CHUNK> digest{};
+        Hasher::sha256_8_avx2(digest.begin(), test_8_block.begin(), AVX2_MAX_LANES);
 
-    TEST_CHECK(digest == test_8_digests);  // NOLINT
+        TEST_CHECK(digest == test_8_digests);  // NOLINT
+    }
+}
+
+void test_hash_shani() {
+    auto impl = Hasher::implemented();
+    if (impl & Hasher::SHA) {
+        std::array<std::uint8_t, AVX2_MAX_LANES * BYTES_PER_CHUNK> digest{};
+        Hasher::sha256_shani(digest.begin(), test_8_block.begin(), AVX2_MAX_LANES);
+
+        TEST_CHECK(digest == test_8_digests);  // NOLINT
+    }
 }
 
 // NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables)
-TEST_LIST = {{"hash_avx_1", test_hash_avx_1},
+TEST_LIST = {{"hash_avx_1", test_hash_sse_1},
              {"hash_avx_4", test_hash_avx_4},
              {"hash_avx2_8", test_hash_avx2_8},
+             {"hash_shani", test_hash_shani},
              {NULL, NULL}};
