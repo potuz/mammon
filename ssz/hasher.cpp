@@ -27,11 +27,15 @@
 extern "C" void sha256_8_avx2(unsigned char* output, const unsigned char* input, std::size_t blocks);
 extern "C" void sha256_shani(unsigned char* output, const unsigned char* input, std::size_t blocks);
 
+namespace {
+    constexpr auto CPUID_LEAF = 7;
+}
+
 namespace ssz::Hasher {
 
 SHA256_hasher best_sha256_implementation() {
-    std::uint32_t a,b,c,d; 
-    __get_cpuid_count(7,0,&a,&b,&c,&d);
+    std::uint32_t a,b,c,d; // NOLINT
+    __get_cpuid_count(CPUID_LEAF,0,&a,&b,&c,&d);
     if (b & bit_SHA)
         return &sha256_shani;
     return &sha256_8_avx2;

@@ -31,10 +31,6 @@ using namespace ssz;
 using namespace constants;
 
 
-extern "C" void sha256_1_avx(unsigned char* output, const unsigned char* input);
-extern "C" void sha256_4_avx(unsigned char* output, const unsigned char* input, size_t blocks);
-extern "C" void sha256_8_avx2(unsigned char* output, const unsigned char* input, size_t blocks);
-
 namespace {
 
 constexpr auto AVX_MAX_LANES = 4;
@@ -114,40 +110,33 @@ constexpr std::array<std::uint8_t, AVX2_MAX_LANES * BYTES_PER_CHUNK> test_8_dige
 
 } // namespace
 
+using namespace ssz::Hasher;
+
 void test_hash_avx_1() {
     std::array<std::uint8_t, BYTES_PER_CHUNK> digest {};
-    sha256_1_avx(digest.begin(), test_8_block.begin());
+    hash_64b_blocks(digest.begin(), test_8_block.begin(), 1);
 
-    TEST_CHECK(digest == test_1_digest);
+    TEST_CHECK(digest == test_1_digest); // NOLINT
     
 }
 
 void test_hash_avx_4() {    
     std::array<std::uint8_t, AVX_MAX_LANES * BYTES_PER_CHUNK> digest {};
-    sha256_4_avx(digest.begin(), test_8_block.begin(), AVX_MAX_LANES);
+    hash_64b_blocks(digest.begin(), test_8_block.begin(), AVX_MAX_LANES);
 
-    TEST_CHECK(digest == test_4_digests);
+    TEST_CHECK(digest == test_4_digests); // NOLINT
 }
 
 
 void test_hash_avx2_8() {    
     std::array<std::uint8_t, AVX2_MAX_LANES * BYTES_PER_CHUNK> digest {};
-    sha256_8_avx2(digest.begin(), test_8_block.begin(), AVX2_MAX_LANES);
+    hash_64b_blocks(digest.begin(), test_8_block.begin(), AVX2_MAX_LANES);
 
-    TEST_CHECK(digest == test_8_digests);
-}
-
-void test_hasher() {
-    std::array<std::uint8_t, AVX2_MAX_LANES * BYTES_PER_CHUNK> digest {};
-    ssz::Hasher::hash_64b_blocks(digest.begin(), test_8_block.begin(), AVX2_MAX_LANES);
-
-    TEST_CHECK(digest == test_8_digests);
+    TEST_CHECK(digest == test_8_digests); // NOLINT
 }
 
 // NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables)
-
 TEST_LIST = {{"hash_avx_1", test_hash_avx_1},
              {"hash_avx_4", test_hash_avx_4},
              {"hash_avx2_8", test_hash_avx2_8},
-             {"hasher", test_hasher},
              {NULL, NULL}};

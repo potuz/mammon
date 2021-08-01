@@ -68,7 +68,7 @@ add_executable (beacon-chain
         common/bitlist.cpp
         ssz/hasher.cpp
 	ssz/hashtree.cpp
-	ssz/sha256.asm
+	ssz/sha256_shani.asm
         ssz/sha256_avx_one_block.asm
         ssz/sha256_avx.asm
         ssz/sha256_avx2.asm
@@ -90,7 +90,7 @@ add_executable(test_ssz
                 ssz/ssz_container.cpp
 	 	beacon-chain/test/test_ssz.cpp
                 common/bitlist.cpp
-                ssz/sha256.asm
+                ssz/sha256_shani.asm
                 ssz/sha256_avx.asm
                 ssz/sha256_avx_one_block.asm
                 ssz/sha256_avx2.asm
@@ -111,7 +111,7 @@ add_executable(test_bytes
                 ssz/ssz_container.cpp
                 ssz/hashtree.cpp
                 ssz/hasher.cpp
-                ssz/sha256.asm
+                ssz/sha256_shani.asm
                 ssz/sha256_avx.asm
                 ssz/sha256_avx_one_block.asm
                 ssz/sha256_avx2.asm
@@ -132,7 +132,7 @@ add_executable(
                ssz/sha256_avx_one_block.asm
                ssz/sha256_avx.asm
                ssz/sha256_avx2.asm
-               ssz/sha256.asm
+               ssz/sha256_shani.asm
               )
 
 enable_testing()
