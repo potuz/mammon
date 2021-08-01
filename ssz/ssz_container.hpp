@@ -31,7 +31,7 @@ namespace ssz {
 class Container;
 using Part = std::pair<std::string, Container *>;
 using ConstPart = std::pair<std::string, const Container *>;
-using SSZIterator = std::vector<std::uint8_t>::iterator;
+using SSZIterator = std::vector<std::uint8_t>::const_iterator;
 
 class Container {
    protected:
