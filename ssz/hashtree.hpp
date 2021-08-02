@@ -26,11 +26,13 @@
 #include <cstring>
 #include <vector>
 
+#include "ssz/hasher.hpp"
 #include "ssz/ssz.hpp"
 
 namespace ssz {
 class HashTree {
    private:
+    static const Hasher hasher;
     std::vector<Chunk> hash_tree_;
 
    public:

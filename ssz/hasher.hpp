@@ -28,33 +28,49 @@ extern "C" void sha256_4_avx(unsigned char* output, const unsigned char* input, 
 extern "C" void sha256_8_avx2(unsigned char* output, const unsigned char* input, std::size_t blocks);
 extern "C" void sha256_shani(unsigned char* output, const unsigned char* input, std::size_t blocks);
 
-namespace ssz::Hasher {
+namespace ssz {
 
-enum IMPL {
-    NONE = 0,
-    SSE  = 1,
-    AVX  = 2,
-    AVX2 = 4,
-    SHA  = 8
+class Hasher {
+
+    public:
+        enum class IMPL {
+            NONE = 0,
+            SSE  = 1,
+            AVX  = 2,
+            AVX2 = 4,
+            SHA  = 8
+        };
+
+        inline friend IMPL operator |(IMPL a, IMPL b) noexcept {
+            return static_cast<IMPL>(static_cast<int>(a) | static_cast<int>(b));
+        }
+
+        inline friend IMPL operator &(IMPL a, IMPL b) noexcept {
+            return static_cast<IMPL>(static_cast<int>(a) & static_cast<int>(b));
+        }
+
+        inline friend bool operator !(IMPL a) noexcept { return a == IMPL::NONE; };
+
+        Hasher() : _hash_64b_blocks { best_sha256_implementation() } {};
+        Hasher(IMPL impl);
+        
+        inline constexpr void hash_64b_blocks(unsigned char* output, const unsigned char* input, std::size_t blocks) const {
+            _hash_64b_blocks(output, input, blocks);
+        }
+        
+        static const IMPL implemented(); 
+        
+
+
+    private:
+        typedef void (*SHA256_hasher)(unsigned char*, const unsigned char*, std::size_t);
+        SHA256_hasher _hash_64b_blocks;
+        
+        static SHA256_hasher best_sha256_implementation();
+        static constexpr auto sha256_4_avx = ::sha256_4_avx;
+        static constexpr auto sha256_8_avx2 = ::sha256_8_avx2;
+        static constexpr auto sha256_shani = ::sha256_shani;
+        static void sha256_sse(unsigned char* output, const unsigned char* input, std::size_t blocks);
 };
 
-inline IMPL operator |(IMPL a, IMPL b) noexcept {
-    return static_cast<IMPL>(static_cast<int>(a) | static_cast<int>(b));
-}
-
-inline IMPL operator &(IMPL a, IMPL b) noexcept {
-    return static_cast<IMPL>(static_cast<int>(a) & static_cast<int>(b));
-}
-typedef void (*SHA256_hasher)(unsigned char*, const unsigned char*, std::size_t);
-
-const IMPL implemented(); 
-SHA256_hasher best_sha256_implementation();
-const auto hash_64b_blocks = best_sha256_implementation();
-
-void sha256_sse(unsigned char* output, const unsigned char* input, std::size_t blocks);
-
-constexpr auto sha256_4_avx = ::sha256_4_avx;
-constexpr auto sha256_8_avx2 = ::sha256_8_avx2;
-constexpr auto sha256_shani = ::sha256_shani;
-
-}  // namespace ssz::Hasher
+}  // namespace ssz

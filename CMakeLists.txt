@@ -131,6 +131,8 @@ add_executable(
                ssz/test_sha256.cpp
               )
 
+target_compile_definitions(test_sha256 PUBLIC CUSTOM_HASHER)
+
 enable_testing()
 
 add_test(test_ssz test_ssz)

@@ -25,6 +25,7 @@
 
 #include "include/acutest.h"
 #include "ssz/hasher.hpp"
+#include "ssz/hashtree.hpp"
 #include "ssz/ssz.hpp"
 
 using namespace ssz;
@@ -100,11 +101,14 @@ constexpr std::array<std::uint8_t, AVX2_MAX_LANES * BYTES_PER_CHUNK> test_8_dige
 
 using namespace ssz;
 
+const auto HashTree::hasher = Hasher{};
+
 void test_hash_sse_1() {
     auto impl = Hasher::implemented();
-    if (impl & Hasher::SSE) {
+    if (!!(impl & Hasher::IMPL::SSE)) {
+        Hasher hasher{Hasher::IMPL::SSE};
         std::array<std::uint8_t, BYTES_PER_CHUNK> digest{};
-        Hasher::sha256_sse(digest.begin(), test_8_block.begin(), 1);
+        hasher.hash_64b_blocks(digest.begin(), test_8_block.begin(), 1);
 
         TEST_CHECK(digest == test_1_digest);  // NOLINT
     }
@@ -112,9 +116,10 @@ void test_hash_sse_1() {
 
 void test_hash_avx_4() {
     auto impl = Hasher::implemented();
-    if (impl & Hasher::AVX) {
+    if (!!(impl & Hasher::IMPL::AVX)) {
+        Hasher hasher{Hasher::IMPL::AVX};
         std::array<std::uint8_t, AVX_MAX_LANES * BYTES_PER_CHUNK> digest{};
-        Hasher::sha256_4_avx(digest.begin(), test_8_block.begin(), AVX_MAX_LANES);
+        hasher.hash_64b_blocks(digest.begin(), test_8_block.begin(), AVX_MAX_LANES);
 
         TEST_CHECK(digest == test_4_digests);  // NOLINT
     }
@@ -122,9 +127,10 @@ void test_hash_avx_4() {
 
 void test_hash_avx2_8() {
     auto impl = Hasher::implemented();
-    if (impl & Hasher::AVX2) {
+    if (!!(impl & Hasher::IMPL::AVX2)) {
+        Hasher hasher{Hasher::IMPL::AVX2};
         std::array<std::uint8_t, AVX2_MAX_LANES * BYTES_PER_CHUNK> digest{};
-        Hasher::sha256_8_avx2(digest.begin(), test_8_block.begin(), AVX2_MAX_LANES);
+        hasher.hash_64b_blocks(digest.begin(), test_8_block.begin(), AVX2_MAX_LANES);
 
         TEST_CHECK(digest == test_8_digests);  // NOLINT
     }
@@ -132,9 +138,10 @@ void test_hash_avx2_8() {
 
 void test_hash_shani() {
     auto impl = Hasher::implemented();
-    if (impl & Hasher::SHA) {
+    if (!!(impl & Hasher::IMPL::SHA)) {
+        Hasher hasher{Hasher::IMPL::SHA};
         std::array<std::uint8_t, AVX2_MAX_LANES * BYTES_PER_CHUNK> digest{};
-        Hasher::sha256_shani(digest.begin(), test_8_block.begin(), AVX2_MAX_LANES);
+        hasher.hash_64b_blocks(digest.begin(), test_8_block.begin(), AVX2_MAX_LANES);
 
         TEST_CHECK(digest == test_8_digests);  // NOLINT
     }

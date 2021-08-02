@@ -30,12 +30,12 @@
 
 namespace {
 using namespace ssz;
-Chunk hash_2_chunks(const Chunk& first, const Chunk& second) {
+Chunk hash_2_chunks(const Chunk& first, const Chunk& second, const Hasher& hasher) {
     std::array<std::uint8_t, 2 * constants::BYTES_PER_CHUNK> sum;  // NOLINT
     std::copy(first.begin(), first.end(), sum.begin());
     std::copy(second.begin(), second.end(), sum.begin() + constants::BYTES_PER_CHUNK);
     Chunk ret;
-    Hasher::hash_64b_blocks(ret.data(), sum.data(), 1);
+    hasher.hash_64b_blocks(ret.data(), sum.data(), 1);
     return ret;
 }
 // clang-format off
@@ -46,7 +46,8 @@ template <std::size_t N> requires(N > 0)
 auto zero_hash_array_helper() {
     std::array<Chunk, N> ret; // NOLINT
     ret[0] = zero_hash;
-    for (auto it = ret.begin() + 1; it != ret.end(); ++it) *it = hash_2_chunks(*std::prev(it), *std::prev(it));
+    ssz::Hasher hasher{};
+    for (auto it = ret.begin() + 1; it != ret.end(); ++it) *it = hash_2_chunks(*std::prev(it), *std::prev(it), hasher);
     return ret;
 }
 // clang-format on
@@ -73,24 +74,25 @@ std::vector<Chunk> pack_and_pad(const std::vector<std::uint8_t>& vec) {
     return ret;
 }
 
-void merkleize(const std::vector<Chunk>& vec, std::vector<Chunk>& hash_tree, std::size_t limit) {
+void merkleize(const std::vector<Chunk>& vec, std::vector<Chunk>& hash_tree, std::size_t limit, const Hasher& hasher) {
     auto depth = helpers::log2ceil(limit);
     auto first = hash_tree.begin();
     auto last = first + (vec.size() + 1) / 2;  // NOLINT
-    if (vec.size() > 1) Hasher::hash_64b_blocks(hash_tree[0].begin(), vec[0].begin(), vec.size() / 2);
-    if (vec.size() % 2) *std::prev(last) = hash_2_chunks(vec.back(), zero_hash);
+    if (vec.size() > 1) hasher.hash_64b_blocks(hash_tree[0].begin(), vec[0].begin(), vec.size() / 2);
+    if (vec.size() % 2) *std::prev(last) = hash_2_chunks(vec.back(), zero_hash, hasher);
     auto dist = std::distance(first, last);
     auto height = 1;
     while (dist > 1) {
-        Hasher::hash_64b_blocks((*last).begin(), (*first).begin(), dist / 2);
+        hasher.hash_64b_blocks((*last).begin(), (*first).begin(), dist / 2);
         first = last;
         last += (dist + 1) / 2;
-        if (dist % 2) *std::prev(last) = hash_2_chunks(*std::prev(first), zero_hash_array[height]);  // NOLINT
+        // NOLINTNEXTLINE 
+        if (dist % 2) *std::prev(last) = hash_2_chunks(*std::prev(first), zero_hash_array[height], hasher);
         height++;
         dist = std::distance(first, last);
     }
     while (height < depth) {
-        *last = hash_2_chunks(*std::prev(last), zero_hash_array[height]);  // NOLINT
+        *last = hash_2_chunks(*std::prev(last), zero_hash_array[height], hasher);  // NOLINT
         last++;
         height++;
     }
@@ -100,6 +102,9 @@ void merkleize(const std::vector<Chunk>& vec, std::vector<Chunk>& hash_tree, std
 }  // namespace
 
 namespace ssz {
+#ifndef CUSTOM_HASHER
+const auto HashTree::hasher = Hasher{};
+#endif
 HashTree::HashTree(const std::vector<Chunk>& chunks, std::uint64_t limit) {
     // return early if only one chunk:
     if (limit <= 1 && chunks.size() == 1)
@@ -114,13 +119,13 @@ HashTree::HashTree(const std::vector<Chunk>& chunks, std::uint64_t limit) {
         hash_tree_.resize(std::max(cache_size, 1ul));
 
         if (limit == 0) limit = std::bit_ceil(chunks.size());
-        merkleize(chunks, hash_tree_, limit);
+        merkleize(chunks, hash_tree_, limit, hasher);
     }
 }
 
 void HashTree::mix_in(std::size_t length) {
     auto length_bytes = eth::Bytes32(length);
-    hash_tree_.push_back(hash_2_chunks(this->hash_tree_root(), length_bytes.to_array()));
+    hash_tree_.push_back(hash_2_chunks(this->hash_tree_root(), length_bytes.to_array(), hasher));
 }
 
 HashTree::HashTree(const std::vector<std::uint8_t>& vec, std::uint64_t limit) : HashTree{pack_and_pad(vec), limit} {};
