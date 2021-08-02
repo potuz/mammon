@@ -147,8 +147,8 @@ section .text
 
 
 struc STACK
-_XFER:		reso	1
-_DIGEST         reso    1
+_XFER:		resb	32
+_DIGEST:         resb   32
 %ifdef WINABI
 _XMM_SAVE:	reso	8
                 resb    16 ; alignment

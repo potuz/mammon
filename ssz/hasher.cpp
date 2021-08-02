@@ -75,6 +75,7 @@ Hasher::Hasher(Hasher::IMPL impl) {
             break;
         case IMPL::SSE:
             _hash_64b_blocks = &sha256_sse;
+            break;
         default:
             _hash_64b_blocks = best_sha256_implementation();
     }

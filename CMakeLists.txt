@@ -5,7 +5,8 @@ project( mammon VERSION 0.1 LANGUAGES C CXX)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
-set(CMAKE_CXX_FLAGS_HOME "${CMAKE_CXX_FLAGS} -O3 -march=native -m64 -ffast-math")
+set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS} -O3 -m64 -ffast-math")
+set(CMAKE_CXX_FLAGS_HOME "${CMAKE_CXX_FLAGS} -O3 -g -march=native -m64 -ffast-math")
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS} -march=native -g -m64 -ffast-math")
 
 
@@ -14,7 +15,7 @@ enable_language(ASM_NASM)
 
 set(CMAKE_ASM_NASM_COMPILER "${NASM_EXECUTABLE}")
 
-if(${CMAKE_BUILD_TYPE} STREQUAL "DEBUG")
+if(${CMAKE_BUILD_TYPE} STREQUAL "HOME" OR ${CMAKE_BUILD_TYPE} STREQUAL "DEBUG")
     set(CMAKE_ASM_NASM_FLAGS "${ASM_NASM_FLAGS} -X gnu -g dwarf2")
 endif()
 
@@ -75,10 +76,8 @@ add_executable (beacon-chain
 	beacon-chain/main.cpp
 	)
 
-
 target_include_directories(beacon-chain PUBLIC
 			   "${CMAKE_SOURCE_DIR}/include")
-
 
 target_link_libraries(beacon-chain
                       snappy
@@ -103,7 +102,6 @@ target_include_directories(test_ssz PUBLIC
 target_link_libraries(test_ssz
                       snappy
                       yaml-cpp)
-
 add_executable(test_bytes
                 ssz/ssz_container.cpp
                 ssz/hashtree.cpp
@@ -132,6 +130,32 @@ add_executable(
               )
 
 target_compile_definitions(test_sha256 PUBLIC CUSTOM_HASHER)
+
+set(CMAKE_HASHER_IMPL_LIST "SSE;AVX;AVX2;SHA")
+foreach(CMAKE_HASHER_IMPL ${CMAKE_HASHER_IMPL_LIST})
+  configure_file(bench/bench_sha256.cpp.in "bench/bench_sha256_${CMAKE_HASHER_IMPL}.cpp")
+  add_executable(bench_sha256_${CMAKE_HASHER_IMPL}
+                  ssz/ssz_container.cpp
+                  common/bitlist.cpp
+                  ssz/sha256_shani.asm
+                  ssz/sha256_avx.asm
+                  ssz/sha256_avx_one_block.asm
+                  ssz/sha256_avx2.asm
+                  ssz/hasher.cpp
+                  ssz/hashtree.cpp
+                  bench/bench_sha256_impl.cpp
+                  bench/bench_sha256_${CMAKE_HASHER_IMPL}.cpp
+                  )
+
+  target_include_directories(bench_sha256_${CMAKE_HASHER_IMPL} PUBLIC
+                             "${CMAKE_SOURCE_DIR}/include"
+                            )
+  target_link_libraries(bench_sha256_${CMAKE_HASHER_IMPL}
+                        yaml-cpp)
+
+  target_compile_definitions(bench_sha256_${CMAKE_HASHER_IMPL} PUBLIC CUSTOM_HASHER)
+
+endforeach(CMAKE_HASHER_IMPL)
 
 enable_testing()
 

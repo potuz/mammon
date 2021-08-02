@@ -1,0 +1,39 @@
+/*  bench_sha256_shani.cpp
+ *
+ *  This file is part of Mammon.
+ *  mammon is a greedy and selfish ETH consensus client.
+ *
+ *  Copyright (c) 2021 - Reimundo Heluani (potuz) potuz@potuz.net
+ *
+ *  This program is free software: you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation, either version 3 of the License, or
+ *  (at your option) any later version.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
+#include <iostream>
+#include "bench/bench_sha256_impl.hpp"
+#include "ssz/hasher.hpp"
+#include "ssz/hashtree.hpp"
+
+const auto ssz::HashTree::hasher = ssz::Hasher{ssz::Hasher::IMPL::@CMAKE_HASHER_IMPL@};
+
+int main(int argc, const char* argv[]) {
+    if (argc < 2) {
+        std::cout << "Usage: " << argv[0] << " <state.ssz>\n";
+        return 1;
+    }
+
+    std::cout << "Implementation         Average (ms)       Slowest\n";
+    std::cout << "-------------------------------------------------\n";
+    std::cout << "@CMAKE_HASHER_IMPL@ :                      ";
+    return bench::bench_sha256_impl(argv[1]);
+}
