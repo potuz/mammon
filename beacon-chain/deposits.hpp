@@ -23,6 +23,7 @@
 #include <numeric>
 
 #include "common/containers.hpp"
+#include "config/constants.hpp"
 #include "include/config.hpp"
 #include "ssz/ssz_container.hpp"
 #include "yaml-cpp/yaml.h"

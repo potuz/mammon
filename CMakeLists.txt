@@ -64,63 +64,33 @@ if(TIDY)
 	set(CMAKE_CXX_CLANG_TIDY "clang-tidy")
 endif()
 
-add_executable (beacon-chain
-        common/bitlist.cpp
-        ssz/hasher.cpp
-	ssz/hashtree.cpp
-	ssz/sha256_shani.asm
-        ssz/sha256_avx_one_block.asm
-        ssz/sha256_avx.asm
-        ssz/sha256_avx2.asm
-        ssz/ssz_container.cpp
-	beacon-chain/main.cpp
-	)
+add_library( ssz OBJECT 
+            common/bitlist.cpp
+            ssz/hasher.cpp
+            ssz/hashtree.cpp
+            ssz/sha256_shani.asm
+            ssz/sha256_avx_one_block.asm
+            ssz/sha256_avx.asm
+            ssz/sha256_avx2.asm
+            ssz/ssz_container.cpp
+            beacon-chain/validator.cpp
+          )
+target_include_directories(ssz PUBLIC "${CMAKE_SOURCE_DIR}/include")
+target_link_libraries( ssz snappy yaml-cpp )
 
-target_include_directories(beacon-chain PUBLIC
-			   "${CMAKE_SOURCE_DIR}/include")
+add_executable ( beacon-chain $<TARGET_OBJECTS:ssz> beacon-chain/main.cpp )
+target_include_directories(beacon-chain PUBLIC "${CMAKE_SOURCE_DIR}/include")
+target_link_libraries( beacon-chain snappy yaml-cpp )
 
-target_link_libraries(beacon-chain
-                      snappy
-                      yaml-cpp)
+add_executable( test_ssz $<TARGET_OBJECTS:ssz>  beacon-chain/test/test_ssz.cpp )
+target_include_directories(test_ssz PUBLIC "${CMAKE_SOURCE_DIR}/include" )
+target_link_libraries(test_ssz snappy yaml-cpp)
 
-add_executable(test_ssz
-                ssz/ssz_container.cpp
-	 	beacon-chain/test/test_ssz.cpp
-                common/bitlist.cpp
-                ssz/sha256_shani.asm
-                ssz/sha256_avx.asm
-                ssz/sha256_avx_one_block.asm
-                ssz/sha256_avx2.asm
-                ssz/hasher.cpp
-                ssz/hashtree.cpp
-		)
+add_executable( test_bytes $<TARGET_OBJECTS:ssz> common/bytes_test.cpp )
+target_include_directories( test_bytes PUBLIC "${CMAKE_SOURCE_DIR}/include" )
+target_link_libraries(test_bytes yaml-cpp)
 
-target_include_directories(test_ssz PUBLIC
-			   "${CMAKE_SOURCE_DIR}/include"
-			  )
-
-target_link_libraries(test_ssz
-                      snappy
-                      yaml-cpp)
-add_executable(test_bytes
-                ssz/ssz_container.cpp
-                ssz/hashtree.cpp
-                ssz/hasher.cpp
-                ssz/sha256_shani.asm
-                ssz/sha256_avx.asm
-                ssz/sha256_avx_one_block.asm
-                ssz/sha256_avx2.asm
-                common/bytes_test.cpp)
-
-target_include_directories(test_bytes PUBLIC
-			   "${CMAKE_SOURCE_DIR}/include"
-			  )
-
-target_link_libraries(test_bytes
-                      yaml-cpp)
-
-add_executable(
-               test_sha256
+add_executable(test_sha256
                ssz/hasher.cpp
                ssz/sha256_avx_one_block.asm
                ssz/sha256_avx.asm
@@ -128,7 +98,6 @@ add_executable(
                ssz/sha256_shani.asm
                ssz/test_sha256.cpp
               )
-
 target_compile_definitions(test_sha256 PUBLIC CUSTOM_HASHER)
 
 set(CMAKE_HASHER_IMPL_LIST "SSE;AVX;AVX2;SHA")
@@ -137,6 +106,7 @@ foreach(CMAKE_HASHER_IMPL ${CMAKE_HASHER_IMPL_LIST})
   add_executable(bench_sha256_${CMAKE_HASHER_IMPL}
                   ssz/ssz_container.cpp
                   common/bitlist.cpp
+                  beacon-chain/validator.cpp
                   ssz/sha256_shani.asm
                   ssz/sha256_avx.asm
                   ssz/sha256_avx_one_block.asm
@@ -147,18 +117,12 @@ foreach(CMAKE_HASHER_IMPL ${CMAKE_HASHER_IMPL_LIST})
                   bench/bench_sha256_${CMAKE_HASHER_IMPL}.cpp
                   )
 
-  target_include_directories(bench_sha256_${CMAKE_HASHER_IMPL} PUBLIC
-                             "${CMAKE_SOURCE_DIR}/include"
-                            )
-  target_link_libraries(bench_sha256_${CMAKE_HASHER_IMPL}
-                        yaml-cpp)
-
+  target_include_directories( bench_sha256_${CMAKE_HASHER_IMPL} PUBLIC "${CMAKE_SOURCE_DIR}/include" )
+  target_link_libraries( bench_sha256_${CMAKE_HASHER_IMPL} yaml-cpp )
   target_compile_definitions(bench_sha256_${CMAKE_HASHER_IMPL} PUBLIC CUSTOM_HASHER)
-
 endforeach(CMAKE_HASHER_IMPL)
 
 enable_testing()
-
 add_test(test_ssz test_ssz)
 add_test(test_bytes test_bytes)
 add_test(test_sha256 test_sha256)
