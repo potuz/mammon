@@ -64,17 +64,19 @@ if(TIDY)
 	set(CMAKE_CXX_CLANG_TIDY "clang-tidy")
 endif()
 
-add_library( ssz OBJECT 
-            common/bitlist.cpp
-            ssz/hasher.cpp
-            ssz/hashtree.cpp
-            ssz/sha256_shani.asm
-            ssz/sha256_avx_one_block.asm
-            ssz/sha256_avx.asm
-            ssz/sha256_avx2.asm
-            ssz/ssz_container.cpp
-            beacon-chain/validator.cpp
-          )
+set( ssz_sources 
+    common/bitlist.cpp
+    ssz/hasher.cpp
+    ssz/hashtree.cpp
+    ssz/sha256_shani.asm
+    ssz/sha256_avx_one_block.asm
+    ssz/sha256_avx.asm
+    ssz/sha256_avx2.asm
+    ssz/ssz_container.cpp
+    beacon-chain/attestation.cpp
+    beacon-chain/validator.cpp
+   )
+add_library( ssz OBJECT ${ssz_sources} )
 target_include_directories(ssz PUBLIC "${CMAKE_SOURCE_DIR}/include")
 target_link_libraries( ssz snappy yaml-cpp )
 
@@ -103,16 +105,8 @@ target_compile_definitions(test_sha256 PUBLIC CUSTOM_HASHER)
 set(CMAKE_HASHER_IMPL_LIST "SSE;AVX;AVX2;SHA")
 foreach(CMAKE_HASHER_IMPL ${CMAKE_HASHER_IMPL_LIST})
   configure_file(bench/bench_sha256.cpp.in "bench/bench_sha256_${CMAKE_HASHER_IMPL}.cpp")
-  add_executable(bench_sha256_${CMAKE_HASHER_IMPL}
-                  ssz/ssz_container.cpp
-                  common/bitlist.cpp
-                  beacon-chain/validator.cpp
-                  ssz/sha256_shani.asm
-                  ssz/sha256_avx.asm
-                  ssz/sha256_avx_one_block.asm
-                  ssz/sha256_avx2.asm
-                  ssz/hasher.cpp
-                  ssz/hashtree.cpp
+  add_executable(bench_sha256_${CMAKE_HASHER_IMPL} 
+                  ${ssz_sources}
                   bench/bench_sha256_impl.cpp
                   bench/bench_sha256_${CMAKE_HASHER_IMPL}.cpp
                   )

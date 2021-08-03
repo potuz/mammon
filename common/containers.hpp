@@ -107,7 +107,6 @@ class ListFixedSizedParts : public ssz::Container {
         ht.mix_in(m_arr.size());
         return ht.hash_tree();
     }
-
     std::vector<ssz::Chunk> hash_tree_x() const requires(!BasicObject<T>) {
         std::vector<ssz::Chunk> chunks{};
         chunks.reserve(m_arr.size());
@@ -120,7 +119,6 @@ class ListFixedSizedParts : public ssz::Container {
         ht.mix_in(m_arr.size());
         return ht.hash_tree();
     }
-
     std::vector<ssz::Chunk> hash_tree() const override { return hash_tree_x(); }
 
    public:
@@ -128,13 +126,9 @@ class ListFixedSizedParts : public ssz::Container {
     std::size_t size(void) const { return m_arr.size(); }
 
     constexpr typename std::vector<T>::iterator begin() noexcept { return m_arr.begin(); }
-
     constexpr typename std::vector<T>::const_iterator cbegin() const noexcept { return m_arr.cbegin(); }
-
     constexpr typename std::vector<T>::iterator end() noexcept { return m_arr.end(); }
-
     constexpr typename std::vector<T>::const_iterator cend() const noexcept { return m_arr.cend(); }
-
     void limit(std::size_t limit) { limit_ = limit; }
 
     BytesVector serialize() const override {

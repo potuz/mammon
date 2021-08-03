@@ -23,9 +23,9 @@
 
 #include <utility>
 
-#include "attestation.hpp"
-#include "deposits.hpp"
-#include "eth1data.hpp"
+#include "beacon-chain/attestation.hpp"
+#include "beacon-chain/deposits.hpp"
+#include "beacon-chain/eth1data.hpp"
 #include "include/config.hpp"
 #include "ssz/ssz.hpp"
 #include "ssz/ssz_container.hpp"

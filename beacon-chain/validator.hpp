@@ -38,17 +38,13 @@ class Validator : public ssz::Container {
    public:
     static constexpr std::size_t ssz_size = 121;
     std::size_t get_ssz_size() const override { return ssz_size; }
-    std::vector<ssz::Chunk> hash_tree() const override {
-        return hash_tree_({&pubkey, &withdrawal_credentials, &effective_balance, &slashed,
-                           &activation_eligibility_epoch, &activation_epoch, &exit_epoch, &withdrawable_epoch});
-    }
-    BytesVector serialize() const override {
-        return serialize_({&pubkey, &withdrawal_credentials, &effective_balance, &slashed,
-                           &activation_eligibility_epoch, &activation_epoch, &exit_epoch, &withdrawable_epoch});
-    }
+    std::vector<ssz::Chunk> hash_tree() const override;
+    BytesVector serialize() const override;
     bool deserialize(ssz::SSZIterator it, ssz::SSZIterator end) override;
-    bool is_active(Epoch epoch) const noexcept;
+
+    bool is_active(const Epoch& epoch) const noexcept;
     bool is_eligible_for_activation_queue() const noexcept;
+    bool is_slashable(const Epoch& epoch) const noexcept;
 
     YAML::Node encode() const override; 
     bool decode(const YAML::Node &node) override;
