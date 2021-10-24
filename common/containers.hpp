@@ -129,6 +129,8 @@ class ListFixedSizedParts : public ssz::Container {
     constexpr typename std::vector<T>::const_iterator cbegin() const noexcept { return m_arr.cbegin(); }
     constexpr typename std::vector<T>::iterator end() noexcept { return m_arr.end(); }
     constexpr typename std::vector<T>::const_iterator cend() const noexcept { return m_arr.cend(); }
+    std::vector<T>& data() { return m_arr; }
+
     void limit(std::size_t limit) { limit_ = limit; }
 
     BytesVector serialize() const override {

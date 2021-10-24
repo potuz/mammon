@@ -88,4 +88,6 @@ constexpr uint MAX_ATTESTATIONS = 128;
 constexpr uint MAX_DEPOSITS = 16;
 constexpr uint MAX_VOLUNTARY_EXITS = 16;
 
+constexpr uint64_t MAX_BYTES_PER_TRANSACTION = 1048576;
+
 }; // namespace constants

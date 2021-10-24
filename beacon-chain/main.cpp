@@ -19,4 +19,22 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-int main(int argc, char *argv[]) { return 0; }
+#include <iostream>
+#include "common/bytes.hpp"
+#include "beacon-chain/transaction.hpp"
+#include "helpers/bytes_to_string.hpp"
+
+int main(int argc, char *argv[]) { 
+    
+    eth::Bytes<121> txBytes{"0x02f8768314677280843b9aca07843b9aca0782520894aaec86394441f915bce3e6ab399977e9906f3b69893635c9adc5dea0000080c001a0d83c6dd0abcd2d5ba2f4307342eb9027c197dc3db0a27cc497e6098a2348aa87a01647170d490f7adfc45ee5045502e75da3425b5d86d7088a086fdeec78361699"};
+
+    eth::Transaction tx{};
+    auto vec = tx.data();
+    vec.insert(vec.end(), txBytes.cbegin(), txBytes.cend());
+    auto txhash = tx.hash_tree_root();
+    std::cout << "tx Bytes : " << txBytes.to_string() << std::endl;
+    std::cout << "tx root: " << helpers::bytes_to_string(txhash) << std::endl;
+
+    return 0; 
+
+}

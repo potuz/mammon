@@ -26,12 +26,12 @@
 #include <concepts>
 #include <cstddef>
 #include <cstring>
-#include <iomanip>
 #include <iostream>
 #include <stdexcept>
 #include <vector>
 
 #include "helpers/bytes_to_int.hpp"
+#include "helpers/bytes_to_string.hpp"
 #include "ssz/ssz_container.hpp"
 #include "yaml-cpp/yaml.h"
 
@@ -96,12 +96,7 @@ class Bytes : public ssz::Container {
     const std::array<std::uint8_t, N> &to_array() const { return m_arr; }
 
     std::string to_string() const {
-        std::stringstream os;
-        std::ios_base::fmtflags save = std::cout.flags();
-        os << "0x";
-        for (auto i = m_arr.cbegin(); i != m_arr.cend(); ++i) os << std::setfill('0') << std::setw(2) << std::hex << *i;
-        std::cout.flags(save);
-        return os.str();
+        return helpers::bytes_to_string(m_arr);
     };
 
     void from_string(const std::string &hex) { m_arr = bytes_from_str(hex); }
